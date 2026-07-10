@@ -144,7 +144,9 @@ router.post('/:quote_id', asyncHandler(async (req, res) => {
 
   await generateAgreement(req, { policyId: policyId, templateId: `${policy.policy_type}_POLICY_v1` });
 
-  res.status(201).json(await storage.getPolicy(policyId));
+  const finalPolicy = await storage.getPolicy(policyId);
+
+  res.status(201).json(finalPolicy);
 }));
 
 export { router as quotesRouter };

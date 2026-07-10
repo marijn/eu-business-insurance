@@ -102,6 +102,7 @@ router.post('/:quote_id', asyncHandler(async (req, res) => {
   const existing = await storage.getQuote(quote_id);
   if (!existing) throw notFound('Quote');
   const quote = await refreshQuote(existing);
+  // TODO: Cover this branch in a test
   if (quote.status !== 'PENDING') {
     throw badRequest(`Quote is ${quote.status} and can no longer be bound`);
   }

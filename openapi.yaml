@@ -1,0 +1,3713 @@
+openapi: 3.0.3
+
+info:
+  title: EU Business Insurance Platform API
+  description: |
+    End-to-end API for selling, managing, and servicing **Cyber Liability, D&O, Surety Bonds, and Workers' Compensation** policies in the EU.
+    Compliant with **GDPR, eIDAS, PSD2, Solvency II, and IDD**.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api@insureeu.com
+  license:
+    name: Proprietary
+    url: https://insureeu.com/legal
+
+servers:
+  - url: https://api.insureeu.com/v1
+    description: Production (EU Central - Frankfurt)
+  - url: https://staging-api.insureeu.com/v1
+    description: Staging (EU West - Amsterdam)
+
+tags:
+  - name: Policy Management
+    description: Quote, bind, endorse, and renew policies
+  - name: Agreement Engine
+    description: Generate, sign, and manage legal documents
+  - name: Billing & Payments
+    description: Invoicing, payment processing, and dunning
+  - name: Claims Management
+    description: Submit, investigate, adjudicate, and pay claims
+  - name: Payouts
+    description: Disburse claim payments (SEPA-compliant)
+  - name: Underwriting
+    description: Risk assessment, pricing, and eligibility
+  - name: Compliance
+    description: Audit trails, GDPR, and regulatory reporting
+  - name: Document Management
+    description: Store and manage policy/claim documents
+  - name: Webhooks
+    description: Inbound notifications from integrated providers
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+paths:
+  /quotes:
+    post:
+      tags:
+        - Policy Management
+      summary: Generate a quote for a business
+      operationId: createQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+      responses:
+        "201":
+          description: Quote created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "500":
+          $ref: '#/components/responses/InternalError'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    get:
+      tags:
+        - Policy Management
+      summary: List quotes
+      operationId: listQuotes
+      parameters:
+        - $ref: '#/components/parameters/businessId'
+        - $ref: '#/components/parameters/policyType'
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        "200":
+          description: List of quotes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteList'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /quotes/{quote_id}:
+    get:
+      tags:
+        - Policy Management
+      summary: Retrieve a quote
+      operationId: getQuote
+      parameters:
+        - $ref: '#/components/parameters/quoteId'
+      responses:
+        "200":
+          description: Quote details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+        - Policy Management
+      summary: Bind a quote to create a policy
+      operationId: bindQuote
+      parameters:
+        - $ref: '#/components/parameters/quoteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                effective_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      responses:
+        "201":
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /policies:
+    get:
+      tags:
+        - Policy Management
+      summary: List policies
+      operationId: listPolicies
+      parameters:
+        - $ref: '#/components/parameters/businessId'
+        - $ref: '#/components/parameters/policyType'
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        "200":
+          description: List of policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /policies/{policy_id}:
+    get:
+      tags:
+        - Policy Management
+      summary: Retrieve a policy
+      operationId: getPolicy
+      parameters:
+        - $ref: '#/components/parameters/policyId'
+      responses:
+        "200":
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags:
+        - Policy Management
+      summary: Endorse (modify) a policy
+      operationId: endorsePolicy
+      parameters:
+        - $ref: '#/components/parameters/policyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndorsementRequest'
+      responses:
+        "200":
+          description: Policy updated with endorsement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+        - Policy Management
+      summary: Renew a policy
+      operationId: renewPolicy
+      parameters:
+        - $ref: '#/components/parameters/policyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                term:
+                  $ref: '#/components/schemas/PolicyTerm'
+                changes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PolicyChange'
+      responses:
+        "200":
+          description: Renewed policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      tags:
+        - Policy Management
+      summary: Cancel a policy
+      operationId: cancelPolicy
+      parameters:
+        - $ref: '#/components/parameters/policyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  enum: [CUSTOMER_REQUEST, NON_PAYMENT, RISK_CHANGE, FRAUD, OTHER]
+                effective_date:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          description: Policy cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /policies/{policy_id}/coverage:
+    get:
+      tags:
+        - Policy Management
+      summary: Get active coverage details
+      operationId: getCoverage
+      parameters:
+        - $ref: '#/components/parameters/policyId'
+      responses:
+        "200":
+          description: Coverage details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coverage'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /agreements/generate:
+    post:
+      tags:
+        - Agreement Engine
+      summary: Generate a policy/endorsement document
+      operationId: generateAgreement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgreementRequest'
+      responses:
+        "201":
+          description: Agreement generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /agreements/{agreement_id}:
+    get:
+      tags:
+        - Agreement Engine
+      summary: Retrieve an agreement
+      operationId: getAgreement
+      parameters:
+        - $ref: '#/components/parameters/agreementId'
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [pdf, html, json]
+            default: json
+      responses:
+        "200":
+          description: Agreement details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /agreements/{agreement_id}/versions:
+    get:
+      tags:
+        - Agreement Engine
+      summary: List all versions of an agreement
+      operationId: listAgreementVersions
+      parameters:
+        - $ref: '#/components/parameters/agreementId'
+      responses:
+        "200":
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgreementVersion'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /agreements/{agreement_id}/sign:
+    post:
+      tags:
+        - Agreement Engine
+      summary: Initiate e-signature (eIDAS-compliant)
+      operationId: initiateSigning
+      parameters:
+        - $ref: '#/components/parameters/agreementId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - signatory_email
+              properties:
+                signatory_email:
+                  type: string
+                  format: email
+                redirect_url:
+                  type: string
+                  format: uri
+                signatory_role:
+                  type: string
+                  enum: [INSURED, INSURER, BROKER, WITNESS]
+      responses:
+        "201":
+          description: Signing request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SigningRequest'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /agreements/{agreement_id}/signatures:
+    get:
+      tags:
+        - Agreement Engine
+      summary: Get signature status
+      operationId: getSignatures
+      parameters:
+        - $ref: '#/components/parameters/agreementId'
+      responses:
+        "200":
+          description: Signature status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureStatus'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /agreements/{agreement_id}/void:
+    post:
+      tags:
+        - Agreement Engine
+      summary: Void an agreement (pre-signing)
+      operationId: voidAgreement
+      parameters:
+        - $ref: '#/components/parameters/agreementId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Agreement voided
+        "400":
+          $ref: '#/components/responses/BadRequest'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /invoices:
+    post:
+      tags:
+        - Billing & Payments
+      summary: Generate an invoice
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceRequest'
+      responses:
+        "201":
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    get:
+      tags:
+        - Billing & Payments
+      summary: List invoices
+      operationId: listInvoices
+      parameters:
+        - $ref: '#/components/parameters/businessId'
+        - $ref: '#/components/parameters/policyIdFilter'
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceList'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /invoices/{invoice_id}:
+    get:
+      tags:
+        - Billing & Payments
+      summary: Retrieve an invoice
+      operationId: getInvoice
+      parameters:
+        - $ref: '#/components/parameters/invoiceId'
+      responses:
+        "200":
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /invoices/{invoice_id}/pay:
+    post:
+      tags:
+        - Billing & Payments
+      summary: Process a payment (PSD2-compliant)
+      operationId: processPayment
+      parameters:
+        - $ref: '#/components/parameters/invoiceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        "201":
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "402":
+          description: Payment required (e.g., SCA failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /invoices/{invoice_id}/refund:
+    post:
+      tags:
+        - Billing & Payments
+      summary: Issue a refund
+      operationId: refundPayment
+      parameters:
+        - $ref: '#/components/parameters/invoiceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - reason
+              properties:
+                amount:
+                  type: number
+                  minimum: 0
+                  exclusiveMinimum: true
+                reason:
+                  type: string
+                  enum: [DUPLICATE, ERROR, CANCELLATION, OTHER]
+                payment_method_id:
+                  type: string
+      responses:
+        "201":
+          description: Refund initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /invoices/{invoice_id}/payments:
+    get:
+      tags:
+        - Billing & Payments
+      summary: List payments for an invoice
+      operationId: listPayments
+      parameters:
+        - $ref: '#/components/parameters/invoiceId'
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Payment'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /payment-methods:
+    post:
+      tags:
+        - Billing & Payments
+      summary: Add a payment method
+      operationId: addPaymentMethod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
+      responses:
+        "201":
+          description: Payment method added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    get:
+      tags:
+        - Billing & Payments
+      summary: List payment methods
+      operationId: listPaymentMethods
+      parameters:
+        - $ref: '#/components/parameters/businessId'
+      responses:
+        "200":
+          description: List of payment methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment_methods:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethod'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /dunning/{invoice_id}:
+    post:
+      tags:
+        - Billing & Payments
+      summary: Trigger dunning process
+      operationId: triggerDunning
+      parameters:
+        - $ref: '#/components/parameters/invoiceId'
+      responses:
+        "200":
+          description: Dunning process started
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims:
+    post:
+      tags:
+        - Claims Management
+      summary: Submit a new claim
+      operationId: submitClaim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+      responses:
+        "201":
+          description: Claim submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    get:
+      tags:
+        - Claims Management
+      summary: List claims
+      operationId: listClaims
+      parameters:
+        - $ref: '#/components/parameters/businessId'
+        - $ref: '#/components/parameters/policyIdFilter'
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        "200":
+          description: List of claims
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimList'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims/{claim_id}:
+    get:
+      tags:
+        - Claims Management
+      summary: Retrieve a claim
+      operationId: getClaim
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      responses:
+        "200":
+          description: Claim details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags:
+        - Claims Management
+      summary: Update a claim
+      operationId: updateClaim
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimUpdate'
+      responses:
+        "200":
+          description: Claim updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims/{claim_id}/documents:
+    post:
+      tags:
+        - Claims Management
+      summary: Upload supporting documents
+      operationId: uploadClaimDocument
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+                  enum: [INCIDENT_REPORT, MEDICAL_REPORT, POLICE_REPORT, INVOICE, OTHER]
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims/{claim_id}/assign:
+    post:
+      tags:
+        - Claims Management
+      summary: Assign claim to an adjuster
+      operationId: assignClaim
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - adjuster_id
+              properties:
+                adjuster_id:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Claim assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims/{claim_id}/investigate:
+    post:
+      tags:
+        - Claims Management
+      summary: Request investigation
+      operationId: requestInvestigation
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                investigator_id:
+                  type: string
+                scope:
+                  type: array
+                  items:
+                    type: string
+                    enum: [FRAUD, LIABILITY, COVERAGE, DAMAGE_ASSESSMENT]
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Investigation requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims/{claim_id}/adjudicate:
+    post:
+      tags:
+        - Claims Management
+      summary: Adjudicate a claim
+      operationId: adjudicateClaim
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjudicationRequest'
+      responses:
+        "200":
+          description: Claim adjudicated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjudication'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims/{claim_id}/appeal:
+    post:
+      tags:
+        - Claims Management
+      summary: Submit an appeal
+      operationId: appealClaim
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                documents:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      url:
+                        type: string
+                        format: uri
+      responses:
+        "200":
+          description: Appeal submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /claims/{claim_id}/history:
+    get:
+      tags:
+        - Claims Management
+      summary: Get claim audit trail
+      operationId: getClaimHistory
+      parameters:
+        - $ref: '#/components/parameters/claimId'
+      responses:
+        "200":
+          description: Claim history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClaimHistoryEntry'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /payouts:
+    post:
+      tags:
+        - Payouts
+      summary: Initiate a payout
+      operationId: createPayout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+      responses:
+        "201":
+          description: Payout initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    get:
+      tags:
+        - Payouts
+      summary: List payouts
+      operationId: listPayouts
+      parameters:
+        - $ref: '#/components/parameters/claimIdFilter'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PayoutStatus'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        "200":
+          description: List of payouts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutList'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /payouts/{payout_id}:
+    get:
+      tags:
+        - Payouts
+      summary: Retrieve a payout
+      operationId: getPayout
+      parameters:
+        - $ref: '#/components/parameters/payoutId'
+      responses:
+        "200":
+          description: Payout details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+        - Payouts
+      summary: Cancel a payout (pre-processing)
+      operationId: cancelPayout
+      parameters:
+        - $ref: '#/components/parameters/payoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  enum: [FRAUD, ERROR, DUPLICATE, OTHER]
+      responses:
+        "200":
+          description: Payout cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /underwriting/assess:
+    post:
+      tags:
+        - Underwriting
+      summary: Assess risk and calculate premium
+      operationId: assessRisk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnderwritingRequest'
+      responses:
+        "200":
+          description: Risk assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnderwritingResponse'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /underwriting/requirements:
+    post:
+      tags:
+        - Underwriting
+      summary: Get underwriting requirements for a business
+      operationId: getRequirements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - business_id
+                - policy_type
+              properties:
+                business_id:
+                  type: string
+                policy_type:
+                  $ref: '#/components/schemas/PolicyType'
+                country:
+                  type: string
+                  pattern: ^[A-Z]{2}$
+      responses:
+        "200":
+          description: Underwriting requirements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requirements:
+                    type: array
+                    items:
+                      type: string
+                      enum: [ANNUAL_AUDIT, CYBER_TRAINING, SAFETY_INSPECTION, FINANCIAL_STATEMENTS, OTHER]
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /underwriting/rules/{country}/{policy_type}:
+    get:
+      tags:
+        - Underwriting
+      summary: Get local underwriting rules
+      operationId: getUnderwritingRules
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Z]{2}$
+        - name: policy_type
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/PolicyType'
+      responses:
+        "200":
+          description: Underwriting rules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        description:
+                          type: string
+                        is_mandatory:
+                          type: boolean
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /underwriting/{quote_id}:
+    get:
+      tags:
+        - Underwriting
+      summary: Retrieve the underwriting of a quote
+      operationId: getQuoteUnderwriting
+      parameters:
+        - $ref: '#/components/parameters/quoteId'
+      responses:
+        "200":
+          description: Underwriting of the quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteUnderwriting'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags:
+        - Underwriting
+      summary: Adjust the pricing, risk score, requirements or exclusions of a quote
+      description: |
+        Only PENDING quotes can be adjusted. Fields left out keep their current value.
+        A new net_premium recalculates taxes and gross with the VAT rate of the business's
+        country. The exclusions replace both coverage.exclusions and underwriting.exclusions
+        of the quote, so binding the quote carries them onto the policy. Needs
+        `underwriting:write`.
+      operationId: updateQuoteUnderwriting
+      parameters:
+        - $ref: '#/components/parameters/quoteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteUnderwritingUpdate'
+      responses:
+        "200":
+          description: Underwriting of the quote after the adjustment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteUnderwriting'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /webhooks/mollie:
+    post:
+      tags:
+        - Webhooks
+      summary: Receive Mollie payment status changes
+      operationId: mollieWebhook
+      description: |
+        Mollie posts only the payment ID. The current status is fetched from the Mollie API,
+        then the payment, its refunds and the invoice (or a pending card payment method) are updated.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  example: tr_WDqYK6vllg
+      responses:
+        "200":
+          description: Acknowledged
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /webhooks/docusign:
+    post:
+      tags:
+        - Webhooks
+      summary: Receive DocuSign Connect envelope and recipient events
+      operationId: docusignConnectWebhook
+      description: |
+        Configure a DocuSign Connect configuration with this URL, JSON (SIM) data format
+        and HMAC signatures enabled. Handled events: recipient-completed, recipient-declined,
+        envelope-completed, envelope-declined, envelope-voided; other events are acknowledged
+        and ignored. Deliveries for unknown envelopes or agreements that are no longer
+        awaiting signatures are acknowledged as ignored, so DocuSign does not retry them.
+      security: []
+      parameters:
+        - name: X-DocuSign-Signature-1
+          in: header
+          required: true
+          description: |
+            Base64 HMAC-SHA256 of the raw request body with a Connect HMAC key.
+            DocuSign sends one header per active key (X-DocuSign-Signature-1, -2, ...); any match is accepted.
+            Not checked when the server runs with DOCUSIGN_CONNECT_SKIP_VERIFY=true (local development only).
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocuSignConnectEvent'
+      responses:
+        "200":
+          description: Event acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [processed, ignored]
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /compliance/audit:
+    get:
+      tags:
+        - Compliance
+      summary: List audit log entries
+      operationId: listAuditLogs
+      parameters:
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+        - name: entity_id
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        "200":
+          description: Matching audit log entries, oldest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLogEntry'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+        - Compliance
+      summary: Log an action for audit trail
+      operationId: logAudit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditLogEntry'
+      responses:
+        "201":
+          description: Action logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogEntry'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /compliance/audit/{action_id}:
+    get:
+      tags:
+        - Compliance
+      summary: Retrieve an audit log entry
+      operationId: getAuditLog
+      parameters:
+        - name: action_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit log entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogEntry'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /compliance/gdpr/erasure:
+    post:
+      tags:
+        - Compliance
+      summary: Request data erasure (GDPR Right to Erasure)
+      operationId: requestErasure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - entity_type
+                - entity_id
+                - requester_email
+              properties:
+                entity_type:
+                  type: string
+                  enum: [BUSINESS, USER, POLICY, CLAIM]
+                entity_id:
+                  type: string
+                requester_email:
+                  type: string
+                  format: email
+                reason:
+                  type: string
+      responses:
+        "201":
+          description: Erasure request submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [PENDING, PROCESSING, COMPLETED]
+                  erased_records:
+                    type: object
+                    description: Number of records whose personal data was erased, per kind
+                    additionalProperties:
+                      type: integer
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /compliance/reports/solvency-ii:
+    get:
+      tags:
+        - Compliance
+      summary: Generate Solvency II report
+      operationId: generateSolvencyReport
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [QUARTERLY, ANNUAL]
+            default: QUARTERLY
+        - name: year
+          in: query
+          schema:
+            type: integer
+            minimum: 2020
+      responses:
+        "200":
+          description: Solvency II report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report_id:
+                    type: string
+                  period:
+                    type: string
+                  year:
+                    type: integer
+                  period_start:
+                    type: string
+                    format: date
+                  period_end:
+                    type: string
+                    format: date
+                  data:
+                    type: object
+                    properties:
+                      assets:
+                        type: number
+                        description: Premiums collected, net of refunds and settled payouts
+                      liabilities:
+                        type: number
+                        description: Reserves for open claims
+                      solvency_ratio:
+                        type: number
+                        nullable: true
+                        description: assets / liabilities; null when there are no liabilities
+                  generated_at:
+                    type: string
+                    format: date-time
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /documents:
+    get:
+      tags:
+        - Document Management
+      summary: List the documents attached to an entity
+      operationId: listDocuments
+      parameters:
+        - name: entity_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [POLICY, CLAIM, INVOICE, AGREEMENT, BUSINESS]
+        - name: entity_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Documents of the entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /documents/upload:
+    post:
+      tags:
+        - Document Management
+      summary: Upload a document
+      operationId: uploadDocument
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - entity_type
+                - entity_id
+                - type
+              properties:
+                file:
+                  type: string
+                  format: binary
+                entity_type:
+                  type: string
+                  enum: [POLICY, CLAIM, INVOICE, AGREEMENT, BUSINESS]
+                entity_id:
+                  type: string
+                type:
+                  type: string
+                  enum: [POLICY_DOCUMENT, ENDORSEMENT, CLAIM_FORM, INCIDENT_REPORT, MEDICAL_REPORT, POLICE_REPORT, INVOICE, CONTRACT, OTHER]
+                retention_policy:
+                  type: string
+                  enum: [1_YEAR, 7_YEARS, PERMANENT]
+                  default: 7_YEARS
+      responses:
+        "201":
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /documents/{document_id}:
+    get:
+      tags:
+        - Document Management
+      summary: Retrieve document metadata
+      operationId: getDocument
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        "200":
+          description: Document metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      tags:
+        - Document Management
+      summary: Delete a document (GDPR)
+      operationId: deleteDocument
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        "200":
+          description: Document deleted
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /documents/{document_id}/download:
+    get:
+      tags:
+        - Document Management
+      summary: Download a document
+      operationId: downloadDocument
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        "200":
+          description: Document file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /documents/{document_id}/redact:
+    post:
+      tags:
+        - Document Management
+      summary: Redact PII from a document (GDPR)
+      operationId: redactDocument
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fields:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Document redacted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token with scopes. Each resource needs `<resource>:read` for GET and
+        `<resource>:write` for other methods: `policy` (quotes, policies, agreements),
+        `billing` (invoices, payment methods, dunning), `claims`, `payouts`,
+        `compliance`, `documents`. Underwriting endpoints need `underwriting:read`;
+        adjusting a quote's underwriting also needs `underwriting:write`, and adjudicating a claim additionally needs `claims:adjudicate`.
+        A token without the required scope gets 403.
+        **GDPR Note**: Tokens expire after 1 hour.
+
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: API key for machine-to-machine auth (rate-limited). API keys have all scopes.
+
+  parameters:
+    businessId:
+      name: business_id
+      in: query
+      schema:
+        type: string
+      description: Filter by business ID
+
+    policyIdFilter:
+      name: policy_id
+      in: query
+      schema:
+        type: string
+      description: Filter by policy ID
+
+    claimIdFilter:
+      name: claim_id
+      in: query
+      schema:
+        type: string
+      description: Filter by claim ID
+
+    policyType:
+      name: policy_type
+      in: query
+      schema:
+        $ref: '#/components/schemas/PolicyType'
+
+    status:
+      name: status
+      in: query
+      schema:
+        type: string
+
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+
+    quoteId:
+      name: quote_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^quote_[a-zA-Z0-9-]+$
+
+    policyId:
+      name: policy_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^pol_[a-zA-Z0-9-]+$
+
+    agreementId:
+      name: agreement_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^agreement_[a-zA-Z0-9-]+$
+
+    invoiceId:
+      name: invoice_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^inv_[a-zA-Z0-9-]+$
+
+    claimId:
+      name: claim_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^claim_[a-zA-Z0-9-]+$
+
+    payoutId:
+      name: payout_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^payout_[a-zA-Z0-9-]+$
+
+    documentId:
+      name: document_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^doc_[a-zA-Z0-9-]+$
+
+  responses:
+    BadRequest:
+      description: Bad request (validation error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized (missing/invalid auth)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Authenticated, but the token lacks a required scope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    PolicyType:
+      type: string
+      enum: [CYBER, DNO, SURETY, WORKERS_COMP]
+      description: |
+        - `CYBER`: Cyber Liability Insurance
+        - `DNO`: Directors & Officers Insurance
+        - `SURETY`: Surety Bonds
+        - `WORKERS_COMP`: Workers' Compensation
+
+    ClaimStatus:
+      type: string
+      enum: [SUBMITTED, ASSIGNED, INVESTIGATING, ADJUDICATING, APPROVED, PARTIALLY_APPROVED, DENIED, PAID, CLOSED, APPEALED]
+      description: |
+        Current status of a claim. Adjudication sets APPROVED, PARTIALLY_APPROVED or DENIED;
+        an approved claim becomes PAID once its payouts have settled.
+
+    InvoiceStatus:
+      type: string
+      enum: [DRAFT, PENDING, PAID, OVERDUE, CANCELLED, REFUNDED]
+      description: Current status of an invoice
+
+    PayoutStatus:
+      type: string
+      enum: [PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED]
+      description: Current status of a payout
+
+    AdjudicationDecision:
+      type: string
+      enum: [APPROVE, DENY, PARTIAL_APPROVE]
+      description: Outcome of claim adjudication
+
+    QuoteRequest:
+      type: object
+      required:
+        - business_id
+        - policy_type
+        - coverage_request
+        - business_details
+        - term
+      properties:
+        business_id:
+          type: string
+          description: Unique identifier for the business
+        policy_type:
+          $ref: '#/components/schemas/PolicyType'
+        coverage_request:
+          $ref: '#/components/schemas/CoverageRequest'
+        business_details:
+          $ref: '#/components/schemas/BusinessDetails'
+        term:
+          $ref: '#/components/schemas/PolicyTerm'
+
+    CoverageRequest:
+      type: object
+      required:
+        - limits
+        - deductible
+      properties:
+        limits:
+          type: object
+          required:
+            - per_claim
+          properties:
+            per_claim:
+              type: number
+              minimum: 1000
+              description: Maximum payout per claim
+            aggregate:
+              type: number
+              minimum: 1000
+              description: Maximum payout per policy term
+        deductible:
+          type: number
+          minimum: 0
+          description: Amount insured pays before coverage starts
+        add_ons:
+          type: array
+          items:
+            type: string
+            enum: [DATA_BREACH_RESPONSE, REGULATORY_FINES, CRISIS_MANAGEMENT, LEGAL_DEFENSE, BUSINESS_INTERRUPTION]
+          description: Optional coverage extensions
+
+    BusinessDetails:
+      type: object
+      required:
+        - legal_name
+        - country
+        - industry
+        - revenue
+      properties:
+        legal_name:
+          type: string
+          description: Legal name of the business
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          description: ISO 3166-1 alpha-2 country code (e.g., DE, FR)
+        industry:
+          type: string
+          enum: [TECHNOLOGY, FINANCE, HEALTHCARE, CONSTRUCTION, MANUFACTURING, RETAIL, OTHER]
+        revenue:
+          type: number
+          minimum: 0
+          description: Annual revenue in EUR
+        employee_count:
+          type: integer
+          minimum: 1
+          description: Number of employees
+        vat_id:
+          type: string
+          description: VAT identification number (EU)
+        cyber_risk_factors:
+          $ref: '#/components/schemas/CyberRiskFactors'
+        dno_risk_factors:
+          $ref: '#/components/schemas/DNORiskFactors'
+        surety_risk_factors:
+          $ref: '#/components/schemas/SuretyRiskFactors'
+        workers_comp_risk_factors:
+          $ref: '#/components/schemas/WorkersCompRiskFactors'
+
+    CyberRiskFactors:
+      type: object
+      properties:
+        has_mfa:
+          type: boolean
+          description: Multi-factor authentication enabled
+        has_encryption:
+          type: boolean
+          description: Data encryption in place
+        cloud_provider:
+          type: string
+          enum: [AWS, AZURE, GCP, ON_PREMISE, OTHER]
+        incident_history:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              severity:
+                type: string
+                enum: [LOW, MEDIUM, HIGH]
+              description:
+                type: string
+
+    DNORiskFactors:
+      type: object
+      properties:
+        governance_score:
+          type: number
+          minimum: 0
+          maximum: 10
+          description: Corporate governance rating (0-10)
+        past_litigation:
+          type: boolean
+          description: Has the company faced lawsuits in the past 5 years?
+        board_size:
+          type: integer
+          minimum: 1
+          description: Number of board members
+
+    SuretyRiskFactors:
+      type: object
+      properties:
+        financial_strength:
+          type: string
+          enum: [EXCELLENT, GOOD, FAIR, POOR]
+        project_size:
+          type: number
+          minimum: 0
+          description: Contract value in EUR
+        past_defaults:
+          type: integer
+          minimum: 0
+          description: Number of past defaults
+
+    WorkersCompRiskFactors:
+      type: object
+      properties:
+        safety_training:
+          type: boolean
+          description: Regular safety training conducted
+        industry_risk_level:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        past_claims:
+          type: integer
+          minimum: 0
+          description: Number of past workers' comp claims
+
+    PolicyTerm:
+      type: object
+      required:
+        - start_date
+        - end_date
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+
+    Quote:
+      type: object
+      required:
+        - id
+        - status
+        - premium
+        - coverage
+        - underwriting
+        - expiry_date
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^quote_[a-zA-Z0-9-]+$
+        status:
+          type: string
+          enum: [DRAFT, PENDING, ACCEPTED, EXPIRED, REJECTED]
+        premium:
+          $ref: '#/components/schemas/Premium'
+        coverage:
+          $ref: '#/components/schemas/Coverage'
+        underwriting:
+          $ref: '#/components/schemas/UnderwritingSummary'
+        expiry_date:
+          type: string
+          format: date-time
+          description: Quote expiration timestamp
+        created_at:
+          type: string
+          format: date-time
+        business_id:
+          type: string
+        policy_type:
+          $ref: '#/components/schemas/PolicyType'
+        term:
+          $ref: '#/components/schemas/PolicyTerm'
+
+    Premium:
+      type: object
+      required:
+        - gross
+        - net
+        - taxes
+        - currency
+      properties:
+        gross:
+          type: number
+          minimum: 0
+          description: Total premium including taxes
+        net:
+          type: number
+          minimum: 0
+          description: Premium before taxes
+        taxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tax'
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+          default: EUR
+
+    Tax:
+      type: object
+      required:
+        - type
+        - rate
+        - amount
+      properties:
+        type:
+          type: string
+          enum: [VAT, STAMP_DUTY, OTHER]
+        rate:
+          type: number
+          minimum: 0
+          maximum: 1
+        amount:
+          type: number
+          minimum: 0
+
+    Coverage:
+      type: object
+      required:
+        - limits
+        - deductible
+        - add_ons
+      properties:
+        limits:
+          type: object
+          properties:
+            per_claim:
+              type: number
+            aggregate:
+              type: number
+        deductible:
+          type: number
+        add_ons:
+          type: array
+          items:
+            type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+            enum: [ACTS_OF_WAR, TERRORISM, FRAUD, INTENTIONAL_DAMAGE, OTHER]
+
+    UnderwritingSummary:
+      type: object
+      properties:
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        requirements:
+          type: array
+          items:
+            type: string
+            enum: [ANNUAL_AUDIT, CYBER_TRAINING, SAFETY_INSPECTION, FINANCIAL_STATEMENTS, OTHER]
+        exclusions:
+          type: array
+          items:
+            type: string
+
+    Policy:
+      type: object
+      required:
+        - id
+        - business_id
+        - policy_type
+        - status
+        - premium
+        - coverage
+        - term
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^pol_[a-zA-Z0-9-]+$
+        business_id:
+          type: string
+        policy_type:
+          $ref: '#/components/schemas/PolicyType'
+        status:
+          type: string
+          enum: [DRAFT, PENDING, ACTIVE, CANCELLED, EXPIRED, RENEWED]
+        premium:
+          $ref: '#/components/schemas/Premium'
+        coverage:
+          $ref: '#/components/schemas/Coverage'
+        term:
+          $ref: '#/components/schemas/PolicyTerm'
+        agreement_id:
+          type: string
+        invoices:
+          type: array
+          items:
+            type: string
+        endorsements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Endorsement'
+        cancellation:
+          type: object
+          properties:
+            reason:
+              type: string
+              enum: [CUSTOMER_REQUEST, NON_PAYMENT, RISK_CHANGE, FRAUD, OTHER]
+            effective_date:
+              type: string
+              format: date
+        renewed_from:
+          type: string
+          description: ID of the policy this one renews
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Endorsement:
+      type: object
+      required:
+        - id
+        - policy_id
+        - changes
+        - effective_date
+        - status
+      properties:
+        id:
+          type: string
+          pattern: ^end_[a-zA-Z0-9-]+$
+        policy_id:
+          type: string
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyChange'
+        effective_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, CANCELLED]
+        reason:
+          type: string
+        agreement_id:
+          type: string
+          description: Agreement generated for this endorsement
+        created_at:
+          type: string
+          format: date-time
+
+    PolicyChange:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [COVERAGE_LIMIT, DEDUCTIBLE, ADD_ON, EXCLUSION, TERM, ADDRESS]
+        field:
+          type: string
+        old_value:
+          type: string
+          nullable: true
+        new_value:
+          type: string
+          nullable: true
+        action:
+          type: string
+          enum: [ADD, REMOVE, UPDATE]
+        code:
+          type: string
+
+    EndorsementRequest:
+      type: object
+      required:
+        - changes
+        - effective_date
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyChange'
+        effective_date:
+          type: string
+          format: date
+        reason:
+          type: string
+
+    QuoteList:
+      type: object
+      properties:
+        quotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quote'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    PolicyList:
+      type: object
+      properties:
+        policies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    AgreementRequest:
+      type: object
+      required:
+        - policy_id
+        - template_id
+        - language
+      properties:
+        policy_id:
+          type: string
+        template_id:
+          type: string
+        language:
+          type: string
+          enum: [en, de, fr, es, it]
+        variables:
+          type: object
+          additionalProperties: true
+        endorsement_id:
+          type: string
+          description: Generate the agreement for this endorsement instead of the policy itself
+
+    Agreement:
+      type: object
+      description: |
+        A policy (or endorsement) has one current agreement. Generating a new one voids
+        the previous agreement if it is still unsigned.
+      required:
+        - id
+        - status
+        - document_url
+        - template_version
+        - signatories
+      properties:
+        id:
+          type: string
+          pattern: ^agreement_[a-zA-Z0-9-]+$
+        policy_id:
+          type: string
+        endorsement_id:
+          type: string
+        envelope_id:
+          type: string
+          description: DocuSign envelope holding the signing requests for this agreement
+        status:
+          type: string
+          enum: [DRAFT, PENDING_SIGNATURE, SIGNED, DECLINED, VOIDED]
+          description: SIGNED, DECLINED and DocuSign-initiated VOIDED are set by the DocuSign Connect webhook
+        document_url:
+          type: string
+          format: uri
+        template_version:
+          type: string
+        signatories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Signatory'
+        created_at:
+          type: string
+          format: date-time
+        signed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    AgreementVersion:
+      type: object
+      properties:
+        version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        changes:
+          type: array
+          items:
+            type: string
+
+    Signatory:
+      type: object
+      required:
+        - role
+        - email
+        - status
+      properties:
+        recipient_id:
+          type: string
+          description: DocuSign recipient ID within the agreement's envelope
+        role:
+          type: string
+          enum: [INSURED, INSURER, BROKER, WITNESS]
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, SIGNED, REJECTED]
+        signed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    SigningRequest:
+      type: object
+      required:
+        - signature_request_id
+        - signing_url
+        - expires_at
+      properties:
+        signature_request_id:
+          type: string
+          description: DocuSign envelope ID (shared by all signatories of the agreement)
+        signing_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+        signatory_email:
+          type: string
+          format: email
+
+    SignatureStatus:
+      type: object
+      required:
+        - agreement_id
+        - signatories
+      properties:
+        agreement_id:
+          type: string
+        signatories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Signatory'
+        all_signed:
+          type: boolean
+
+    InvoiceRequest:
+      type: object
+      required:
+        - policy_id
+        - type
+        - amount
+        - currency
+        - due_date
+        - items
+        - billing_address
+      properties:
+        policy_id:
+          type: string
+        type:
+          type: string
+          enum: [PREMIUM, FEE, ADJUSTMENT, REFUND]
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+          default: EUR
+        due_date:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        billing_address:
+          $ref: '#/components/schemas/Address'
+        payment_method_id:
+          type: string
+
+    InvoiceItem:
+      type: object
+      required:
+        - description
+        - amount
+        - tax_rate
+      properties:
+        description:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+        tax_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    Invoice:
+      type: object
+      required:
+        - id
+        - policy_id
+        - status
+        - amount
+        - currency
+        - due_date
+        - items
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^inv_[a-zA-Z0-9-]+$
+        policy_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+        due_date:
+          type: string
+          format: date
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        billing_address:
+          $ref: '#/components/schemas/Address'
+        pdf_url:
+          type: string
+          format: uri
+        payment_link:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InvoiceList:
+      type: object
+      properties:
+        invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    PaymentRequest:
+      type: object
+      required:
+        - payment_method_id
+        - amount
+        - currency
+      properties:
+        payment_method_id:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+        metadata:
+          type: object
+          properties:
+            psd2_sca:
+              type: boolean
+              default: true
+            sepa_mandate_id:
+              type: string
+            reference:
+              type: string
+
+    Payment:
+      type: object
+      required:
+        - id
+        - invoice_id
+        - amount
+        - currency
+        - status
+        - gateway
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^pay_[a-zA-Z0-9-]+$
+        invoice_id:
+          type: string
+        payment_method_id:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED]
+          description: Recurring Mollie payments start PENDING and are updated by the Mollie webhook
+        gateway:
+          type: string
+          enum: [MOLLIE]
+        gateway_transaction_id:
+          type: string
+          description: Mollie payment ID
+        receipt_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PaymentMethodRequest:
+      type: object
+      required:
+        - business_id
+        - type
+        - details
+      description: |
+        Creates a Mollie mandate for on-demand charging. SEPA requires iban and bic and creates a
+        Direct Debit mandate directly. CARD requires redirect_url and returns a checkout_url; the
+        method becomes ACTIVE once the customer completes the Mollie checkout.
+      properties:
+        business_id:
+          type: string
+        type:
+          type: string
+          enum: [SEPA, CARD]
+        details:
+          type: object
+          required:
+            - holder_name
+          additionalProperties: false
+          properties:
+            holder_name:
+              type: string
+            iban:
+              type: string
+            bic:
+              type: string
+        email:
+          type: string
+          format: email
+        redirect_url:
+          type: string
+          format: uri
+        is_default:
+          type: boolean
+          default: false
+
+    PaymentMethod:
+      type: object
+      required:
+        - id
+        - business_id
+        - type
+        - details
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^pm_[a-zA-Z0-9-]+$
+        business_id:
+          type: string
+        type:
+          type: string
+          enum: [SEPA, CARD]
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, INVALID]
+        checkout_url:
+          type: string
+          format: uri
+          description: Mollie checkout for the first card payment (CARD methods while PENDING)
+        mollie_customer_id:
+          type: string
+        mollie_mandate_id:
+          type: string
+        mollie_payment_id:
+          type: string
+        details:
+          type: object
+          properties:
+            holder_name:
+              type: string
+            masked_iban:
+              type: string
+            masked_card:
+              type: string
+            card_brand:
+              type: string
+              enum: [VISA, MASTERCARD, AMEX, OTHER]
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Refund:
+      type: object
+      required:
+        - id
+        - invoice_id
+        - amount
+        - currency
+        - reason
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^refund_[a-zA-Z0-9-]+$
+        invoice_id:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+        reason:
+          type: string
+          enum: [DUPLICATE, ERROR, CANCELLATION, OTHER]
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+        payment_method_id:
+          type: string
+        mollie_refunds:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              payment_id:
+                type: string
+              amount:
+                type: number
+              status:
+                type: string
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Address:
+      type: object
+      required:
+        - street
+        - city
+        - postal_code
+        - country
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+        vat_id:
+          type: string
+
+    ClaimRequest:
+      type: object
+      required:
+        - policy_id
+        - claimant
+        - incident
+      properties:
+        policy_id:
+          type: string
+        claimant:
+          $ref: '#/components/schemas/Claimant'
+        incident:
+          $ref: '#/components/schemas/Incident'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentReference'
+        notes:
+          type: string
+
+    Claimant:
+      type: object
+      required:
+        - type
+        - contact
+      properties:
+        type:
+          type: string
+          enum: [INSURED, EMPLOYEE, THIRD_PARTY, BENEFICIARY]
+        business_id:
+          type: string
+        employee_id:
+          type: string
+        contact:
+          $ref: '#/components/schemas/Contact'
+
+    Incident:
+      type: object
+      required:
+        - type
+        - date
+        - description
+      properties:
+        type:
+          type: string
+          enum: [CYBER_BREACH, DATA_LOSS, DNO_CLAIM, SURETY_DEFAULT, WORK_INJURY, WORK_ILLNESS, PROPERTY_DAMAGE, OTHER]
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+        location:
+          type: string
+        estimated_loss:
+          type: number
+          minimum: 0
+        actual_loss:
+          type: number
+          minimum: 0
+          nullable: true
+
+    DocumentReference:
+      type: object
+      required:
+        - type
+        - url
+      properties:
+        type:
+          type: string
+          enum: [INCIDENT_REPORT, MEDICAL_REPORT, POLICE_REPORT, INVOICE, CONTRACT, OTHER]
+        url:
+          type: string
+          format: uri
+        description:
+          type: string
+
+    Contact:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+
+    Claim:
+      type: object
+      required:
+        - id
+        - policy_id
+        - claimant
+        - incident
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^claim_[a-zA-Z0-9-]+$
+        policy_id:
+          type: string
+        claim_number:
+          type: string
+        claimant:
+          $ref: '#/components/schemas/Claimant'
+        incident:
+          $ref: '#/components/schemas/Incident'
+        status:
+          $ref: '#/components/schemas/ClaimStatus'
+        assigned_adjuster:
+          type: string
+          nullable: true
+        estimated_loss:
+          type: number
+        actual_loss:
+          type: number
+          nullable: true
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimNote'
+        adjudication:
+          allOf:
+            - $ref: '#/components/schemas/Adjudication'
+          description: Latest adjudication decision (absent until the claim is adjudicated)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ClaimList:
+      type: object
+      properties:
+        claims:
+          type: array
+          items:
+            $ref: '#/components/schemas/Claim'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    ClaimUpdate:
+      type: object
+      properties:
+        status:
+          allOf:
+            - $ref: '#/components/schemas/ClaimStatus'
+          description: |
+            Only ASSIGNED/INVESTIGATING -> ADJUDICATING and DENIED/PAID -> CLOSED are allowed here;
+            other transitions use the assign, investigate, adjudicate and appeal endpoints.
+        estimated_loss:
+          type: number
+        actual_loss:
+          type: number
+        notes:
+          type: string
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentReference'
+
+    ClaimNote:
+      type: object
+      required:
+        - content
+        - created_at
+        - author
+      properties:
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        author:
+          type: string
+        is_internal:
+          type: boolean
+          default: false
+
+    ClaimHistoryEntry:
+      type: object
+      required:
+        - action
+        - timestamp
+        - user_id
+      properties:
+        action:
+          type: string
+          enum: [SUBMITTED, UPDATED, DOCUMENT_ADDED, ASSIGNED, INVESTIGATED, ADJUDICATED, APPEALED, PAID, CLOSED]
+        timestamp:
+          type: string
+          format: date-time
+        user_id:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    AdjudicationRequest:
+      type: object
+      required:
+        - decision
+        - reason
+        - adjudicator_id
+      properties:
+        decision:
+          $ref: '#/components/schemas/AdjudicationDecision'
+        payout_amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+          default: EUR
+        deductible_applied:
+          type: number
+          minimum: 0
+        reason:
+          type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        adjudicator_id:
+          type: string
+        notes:
+          type: string
+
+    Adjudication:
+      type: object
+      required:
+        - id
+        - claim_id
+        - decision
+        - reason
+        - adjudicator_id
+        - timestamp
+      properties:
+        id:
+          type: string
+          pattern: ^adj_[a-zA-Z0-9-]+$
+        claim_id:
+          type: string
+        decision:
+          $ref: '#/components/schemas/AdjudicationDecision'
+        payout_amount:
+          type: number
+          nullable: true
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+        deductible_applied:
+          type: number
+          nullable: true
+        reason:
+          type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        adjudicator_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    PayoutRequest:
+      type: object
+      required:
+        - claim_id
+        - amount
+        - currency
+        - recipient
+        - purpose
+      properties:
+        claim_id:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+          default: EUR
+        recipient:
+          $ref: '#/components/schemas/Recipient'
+        purpose:
+          type: string
+          enum: [CYBER_CLAIM, DNO_CLAIM, SURETY_CLAIM, WORKERS_COMP_CLAIM, REFUND]
+        metadata:
+          type: object
+          properties:
+            tax_withholding:
+              type: number
+              default: 0
+            compliance_checks:
+              type: object
+              properties:
+                aml:
+                  type: boolean
+                  default: true
+                kyc:
+                  type: boolean
+                  default: true
+                sanctions:
+                  type: boolean
+                  default: true
+            reference:
+              type: string
+
+    Recipient:
+      type: object
+      required:
+        - type
+        - name
+        - iban
+        - bic
+        - address
+      properties:
+        type:
+          type: string
+          enum: [BUSINESS, INDIVIDUAL, LAW_FIRM, OTHER]
+        name:
+          type: string
+        iban:
+          type: string
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}$
+        bic:
+          type: string
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+        address:
+          $ref: '#/components/schemas/Address'
+        tax_id:
+          type: string
+
+    Payout:
+      type: object
+      required:
+        - id
+        - claim_id
+        - amount
+        - currency
+        - recipient
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^payout_[a-zA-Z0-9-]+$
+        claim_id:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [EUR, USD, GBP]
+        recipient:
+          $ref: '#/components/schemas/Recipient'
+        status:
+          $ref: '#/components/schemas/PayoutStatus'
+        bank_reference:
+          type: string
+        purpose:
+          type: string
+        estimated_arrival:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PayoutList:
+      type: object
+      properties:
+        payouts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payout'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    UnderwritingRequest:
+      type: object
+      required:
+        - policy_type
+        - business_id
+        - data
+      properties:
+        policy_type:
+          $ref: '#/components/schemas/PolicyType'
+        business_id:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          default: DE
+
+    UnderwritingResponse:
+      type: object
+      description: |
+        Uses the same rating model as quotes; final_premium is the net premium and equals
+        a quote's premium.net for the same business and coverage.
+      required:
+        - risk_score
+        - premium_base
+        - final_premium
+        - requirements
+      properties:
+        assessment_id:
+          type: string
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        premium_base:
+          type: number
+          minimum: 0
+        premium_adjustments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PremiumAdjustment'
+        final_premium:
+          type: number
+          minimum: 0
+        requirements:
+          type: array
+          items:
+            type: string
+            enum: [ANNUAL_AUDIT, CYBER_TRAINING, SAFETY_INSPECTION, FINANCIAL_STATEMENTS, OTHER]
+        exclusions:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    QuoteUnderwriting:
+      type: object
+      required:
+        - quote_id
+        - status
+        - premium
+        - requirements
+        - exclusions
+      properties:
+        quote_id:
+          type: string
+          pattern: ^quote_[a-zA-Z0-9-]+$
+        status:
+          type: string
+          enum: [DRAFT, PENDING, ACCEPTED, EXPIRED, REJECTED]
+        premium:
+          $ref: '#/components/schemas/Premium'
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        requirements:
+          type: array
+          items:
+            type: string
+            enum: [ANNUAL_AUDIT, CYBER_TRAINING, SAFETY_INSPECTION, FINANCIAL_STATEMENTS, OTHER]
+        exclusions:
+          type: array
+          items:
+            type: string
+            enum: [ACTS_OF_WAR, TERRORISM, FRAUD, INTENTIONAL_DAMAGE, OTHER]
+
+    QuoteUnderwritingUpdate:
+      type: object
+      description: At least one of net_premium, risk_score, requirements or exclusions is required.
+      required:
+        - reason
+      minProperties: 2
+      properties:
+        net_premium:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          description: Premium before taxes; taxes and gross are recalculated
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        requirements:
+          type: array
+          description: Replaces the requirements of the quote
+          items:
+            type: string
+            enum: [ANNUAL_AUDIT, CYBER_TRAINING, SAFETY_INSPECTION, FINANCIAL_STATEMENTS, OTHER]
+        exclusions:
+          type: array
+          description: Replaces the exclusions of the quote
+          items:
+            type: string
+            enum: [ACTS_OF_WAR, TERRORISM, FRAUD, INTENTIONAL_DAMAGE, OTHER]
+        reason:
+          type: string
+          minLength: 1
+          description: Why the underwriter adjusted the quote; recorded in the audit log
+
+    PremiumAdjustment:
+      type: object
+      required:
+        - factor
+        - multiplier
+        - reason
+      properties:
+        factor:
+          type: string
+          enum: [INDUSTRY, REVENUE, EMPLOYEE_COUNT, SECURITY, GOVERNANCE, SAFETY, OTHER]
+        multiplier:
+          type: number
+          minimum: 0
+        reason:
+          type: string
+
+    AuditLogEntry:
+      type: object
+      required:
+        - action
+        - entity_type
+        - entity_id
+        - user_id
+        - timestamp
+      properties:
+        action_id:
+          type: string
+          readOnly: true
+          description: Server-assigned identifier, usable with GET /compliance/audit/{action_id}
+        action:
+          type: string
+          enum:
+            - QUOTE_CREATED
+            - POLICY_BOUND
+            - POLICY_ENDORSED
+            - POLICY_RENEWED
+            - POLICY_CANCELLED
+            - AGREEMENT_GENERATED
+            - AGREEMENT_SIGNING_INITIATED
+            - AGREEMENT_SIGNATORY_SIGNED
+            - AGREEMENT_SIGNATORY_DECLINED
+            - AGREEMENT_SIGNED
+            - AGREEMENT_DECLINED
+            - AGREEMENT_VOIDED
+            - INVOICE_CREATED
+            - PAYMENT_PROCESSED
+            - PAYMENT_UPDATED
+            - REFUND_ISSUED
+            - REFUND_UPDATED
+            - PAYMENT_METHOD_ADDED
+            - PAYMENT_METHOD_UPDATED
+            - DUNNING_TRIGGERED
+            - CLAIM_SUBMITTED
+            - CLAIM_UPDATED
+            - CLAIM_DOCUMENT_ADDED
+            - CLAIM_ASSIGNED
+            - CLAIM_INVESTIGATION_REQUESTED
+            - CLAIM_ADJUDICATED
+            - CLAIM_APPEALED
+            - CLAIM_PAID
+            - CLAIM_CLOSED
+            - PAYOUT_INITIATED
+            - PAYOUT_CANCELLED
+            - PAYOUT_COMPLETED
+            - UNDERWRITING_ASSESSED
+            - UNDERWRITING_ADJUSTED
+            - DOCUMENT_UPLOADED
+            - DOCUMENT_DELETED
+            - DOCUMENT_REDACTED
+            - GDPR_ERASURE_COMPLETED
+            - SOLVENCY_REPORT_GENERATED
+        entity_type:
+          type: string
+          enum: [QUOTE, POLICY, CLAIM, INVOICE, PAYOUT, AGREEMENT, PAYMENT, DOCUMENT, UNDERWRITING, PAYMENT_METHOD, REFUND, GDPR_REQUEST, REPORT]
+        entity_id:
+          type: string
+        user_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        ip_address:
+          type: string
+        user_agent:
+          type: string
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+        gdpr_consent:
+          type: boolean
+
+    Document:
+      type: object
+      required:
+        - id
+        - entity_type
+        - entity_id
+        - type
+        - file_name
+        - mime_type
+        - size
+        - url
+      properties:
+        id:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9-]+$
+        entity_type:
+          type: string
+          enum: [POLICY, CLAIM, INVOICE, AGREEMENT, BUSINESS]
+        entity_id:
+          type: string
+        type:
+          type: string
+          enum: [POLICY_DOCUMENT, ENDORSEMENT, CLAIM_FORM, INCIDENT_REPORT, MEDICAL_REPORT, POLICE_REPORT, INVOICE, CONTRACT, OTHER]
+        file_name:
+          type: string
+        mime_type:
+          type: string
+          enum: [application/pdf, application/json, text/plain, image/jpeg, image/png]
+        size:
+          type: integer
+          minimum: 0
+        url:
+          type: string
+          format: uri
+        checksum:
+          type: string
+        storage_location:
+          type: string
+          enum: [EU_CENTRAL, EU_WEST, EU_NORTH]
+        retention_policy:
+          type: string
+          enum: [1_YEAR, 7_YEARS, PERMANENT]
+        created_at:
+          type: string
+          format: date-time
+
+    DocuSignConnectEvent:
+      type: object
+      required:
+        - event
+        - data
+      properties:
+        event:
+          type: string
+          example: recipient-completed
+        apiVersion:
+          type: string
+        uri:
+          type: string
+        retryCount:
+          type: integer
+        configurationId:
+          type: integer
+        generatedDateTime:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required:
+            - envelopeId
+          properties:
+            accountId:
+              type: string
+            userId:
+              type: string
+            envelopeId:
+              type: string
+            recipientId:
+              type: string
+            envelopeSummary:
+              type: object
+              properties:
+                status:
+                  type: string
+                completedDateTime:
+                  type: string
+                  format: date-time
+                voidedReason:
+                  type: string
+                recipients:
+                  type: object
+                  properties:
+                    signers:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          recipientId:
+                            type: string
+                          email:
+                            type: string
+                          status:
+                            type: string
+                          signedDateTime:
+                            type: string
+                            format: date-time
+                          declinedReason:
+                            type: string
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, RATE_LIMITED, INTERNAL_ERROR]
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        trace_id:
+          type: string

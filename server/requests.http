@@ -1,0 +1,237 @@
+@host = http://localhost:3000
+@baseUrl = {{host}}/v1
+@apiKey = test-api-key-1
+
+### Create a Cyber Liability Quote
+# @name createQuote
+POST {{baseUrl}}/quotes
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "business_id": "biz_12345",
+  "policy_type": "CYBER",
+  "coverage_request": {
+    "limits": {
+      "per_claim": 1000000,
+      "aggregate": 5000000
+    },
+    "deductible": 10000,
+    "add_ons": ["DATA_BREACH_RESPONSE", "REGULATORY_FINES"]
+  },
+  "business_details": {
+    "legal_name": "TechCorp GmbH",
+    "country": "DE",
+    "industry": "TECHNOLOGY",
+    "revenue": 5000000,
+    "employee_count": 50,
+    "cyber_risk_factors": {
+      "has_mfa": true,
+      "has_encryption": true,
+      "cloud_provider": "AWS"
+    }
+  },
+  "term": {
+    "start_date": "{{$datetime 'YYYY-MM-DD' -30 d}}",
+    "end_date": "{{$datetime 'YYYY-MM-DD' 335 d}}"
+  }
+}
+
+### List All Quotes
+GET {{baseUrl}}/quotes
+X-API-KEY: {{apiKey}}
+
+### Get Specific Quote
+GET {{baseUrl}}/quotes/{{createQuote.response.body.id}}
+X-API-KEY: {{apiKey}}
+
+### Bind Quote to Create Policy
+# @name bindQuote
+POST {{baseUrl}}/quotes/{{createQuote.response.body.id}}
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "notes": "Initial policy binding"
+}
+
+### List All Policies
+GET {{baseUrl}}/policies
+X-API-KEY: {{apiKey}}
+
+### Get Specific Policy
+GET {{baseUrl}}/policies/{{bindQuote.response.body.id}}
+X-API-KEY: {{apiKey}}
+
+### Generate an Agreement
+# @name generateAgreement
+POST {{baseUrl}}/agreements/generate
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "policy_id": "{{bindQuote.response.body.id}}",
+  "template_id": "CYBER_POLICY_DE_v2",
+  "language": "de",
+  "variables": {
+    "insured_name": "TechCorp GmbH"
+  }
+}
+
+### Request a Signature
+# @name requestSignature
+POST {{baseUrl}}/agreements/{{generateAgreement.response.body.id}}/sign
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "signatory_email": "jane@techcorp.de",
+  "signatory_role": "INSURED"
+}
+
+### DocuSign Connect Webhook: Envelope Completed
+POST {{host}}/v1/webhooks/docusign
+Content-Type: application/json
+
+{"event":"envelope-completed","data":{"envelopeId":"{{requestSignature.response.body.signature_request_id}}"}}
+
+### Create an Invoice
+# @name createInvoice
+POST {{baseUrl}}/invoices
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "policy_id": "{{bindQuote.response.body.id}}",
+  "type": "PREMIUM",
+  "amount": {{bindQuote.response.body.premium.gross}},
+  "currency": "EUR",
+  "due_date": "{{$datetime 'YYYY-MM-DD' 14 d}}",
+  "items": [
+    {
+      "description": "Cyber Liability Insurance Premium",
+      "amount": {{bindQuote.response.body.premium.net}},
+      "tax_rate": 0.19
+    }
+  ],
+  "billing_address": {
+    "street": "Musterstraße 1",
+    "city": "Berlin",
+    "postal_code": "10115",
+    "country": "DE"
+  }
+}
+
+### Add a SEPA Payment Method
+# @name addPaymentMethod
+POST {{baseUrl}}/payment-methods
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "business_id": "biz_12345",
+  "type": "SEPA",
+  "details": {
+    "holder_name": "TechCorp GmbH",
+    "iban": "DE89370400440532013000",
+    "bic": "COBADEFFXXX"
+  }
+}
+
+### Process a Payment
+# @name processPayment
+POST {{baseUrl}}/invoices/{{createInvoice.response.body.id}}/pay
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "payment_method_id": "{{addPaymentMethod.response.body.id}}",
+  "amount": {{createInvoice.response.body.amount}},
+  "currency": "EUR",
+  "metadata": {
+    "psd2_sca": true,
+    "reference": "Premium payment"
+  }
+}
+
+### Mollie Webhook: Payment Status Changed
+POST {{host}}/v1/webhooks/mollie
+Content-Type: application/x-www-form-urlencoded
+
+id={{processPayment.response.body.gateway_transaction_id}}
+
+### Submit a Claim
+# @name submitClaim
+POST {{baseUrl}}/claims
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "policy_id": "{{bindQuote.response.body.id}}",
+  "claimant": {
+    "type": "INSURED",
+    "business_id": "biz_12345",
+    "contact": {
+      "name": "Jane Doe",
+      "email": "jane@techcorp.de",
+      "phone": "+49301234567"
+    }
+  },
+  "incident": {
+    "type": "CYBER_BREACH",
+    "date": "{{$datetime iso8601 -1 d}}",
+    "description": "Ransomware attack on primary database",
+    "location": "Berlin, DE",
+    "estimated_loss": 500000
+  },
+  "documents": [
+    {
+      "type": "INCIDENT_REPORT",
+      "url": "https://documents.insureeu.com/claims/incident_report.pdf"
+    }
+  ]
+}
+
+### Adjudicate the Claim
+POST {{baseUrl}}/claims/{{submitClaim.response.body.id}}/adjudicate
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "decision": "APPROVE",
+  "payout_amount": 450000,
+  "currency": "EUR",
+  "reason": "Covered under Data Breach Response clause",
+  "adjudicator_id": "adj_123"
+}
+
+### Pay Out the Claim
+POST {{baseUrl}}/payouts
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "claim_id": "{{submitClaim.response.body.id}}",
+  "amount": 450000,
+  "currency": "EUR",
+  "purpose": "CYBER_CLAIM",
+  "recipient": {
+    "type": "BUSINESS",
+    "name": "TechCorp GmbH",
+    "iban": "DE89370400440532013000",
+    "bic": "COBADEFFXXX",
+    "address": {
+      "street": "Musterstraße 1",
+      "city": "Berlin",
+      "postal_code": "10115",
+      "country": "DE"
+    }
+  }
+}
+
+### Claim Audit Trail
+GET {{baseUrl}}/compliance/audit?entity_type=CLAIM&entity_id={{submitClaim.response.body.id}}
+X-API-KEY: {{apiKey}}
+
+### Health Check
+GET {{host}}/health

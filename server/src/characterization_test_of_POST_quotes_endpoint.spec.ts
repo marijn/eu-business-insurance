@@ -94,4 +94,24 @@ describe("Characterization test of quotes endpoint", () => {
         };
         expect(actual).toMatchObject(expected);
     });
+
+    test("Calling `POST /quotes/:quote_id` for a non-existent quote returns an error", async () => {
+        const actualBindResponse = await fetch(`${host}/v1/quotes/quote_aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-KEY': 'test-api-key-1' },
+            body: JSON.stringify({
+                effective_date: "2026-01-01",
+                notes: '',
+            }),
+        });
+        expect(actualBindResponse.status).toBe(404);
+
+        const actual = await actualBindResponse.json();
+
+        const expected = {
+            code: "NOT_FOUND",
+            message: "Quote not found",
+        };
+        expect(actual).toMatchObject(expected);
+    });
 });

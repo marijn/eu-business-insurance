@@ -91,6 +91,9 @@ router.get('/:quote_id', asyncHandler(async (req, res) => {
   res.json(await refreshQuote(quote));
 }));
 
+/**
+ * @todo Developers call it `Bind a Quote to a Policy` but experts refer to this as `Accept a Quote for a Policy`
+ */
 router.post('/:quote_id', asyncHandler(async (req, res) => {
   const { quote_id } = req.params;
   const { effective_date, notes } = validateSchema(bindQuoteRequestSchema, req.body ?? {});

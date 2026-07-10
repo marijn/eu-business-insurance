@@ -57,8 +57,7 @@ router.patch('/:policy_id', asyncHandler(async (req, res) => {
   }
   const { effective_date } = endorsementRequest;
   if (effective_date < policy.term.start_date || effective_date >= policy.term.end_date) {
-    // What happens if we do NOT check if the new effective date is within the original policy period?
-    // throw badRequest('effective_date must fall within the policy term', 'effective_date');
+    throw badRequest('effective_date must fall within the policy term', 'effective_date');
   }
   if (policy.endorsements?.some((e) => e.status === 'PENDING')) {
     throw badRequest('The policy already has an endorsement awaiting signature');

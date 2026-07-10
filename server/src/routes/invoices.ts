@@ -135,8 +135,7 @@ router.post('/:invoice_id/pay', asyncHandler(async (req, res) => {
   }
   const method = await getPaymentMethodForPolicy(paymentRequest.payment_method_id, invoice.policy_id);
   if (method.type === 'CARD' && paymentRequest.metadata?.psd2_sca === false) {
-    // What happens if we do NOT require strong customer authentication (and open ourselves up to creditcard fraud)
-    // throw badRequest('Strong Customer Authentication is required for card payments (PSD2)', 'metadata.psd2_sca');
+    throw badRequest('Strong Customer Authentication is required for card payments (PSD2)', 'metadata.psd2_sca');
   }
   if (method.status !== 'ACTIVE' || !method.mollie_mandate_id) {
     throw badRequest(`Payment method is ${method.status} and cannot be charged`, 'payment_method_id');
@@ -201,8 +200,7 @@ router.post('/:invoice_id/refund', asyncHandler(async (req, res) => {
   if (amount > refundable) {
     throw badRequest(`Amount exceeds the refundable balance of ${refundable}`, 'amount');
   }
-  // What happens if we do NOT verify if the payment method belongs to the customer and with that effectively allow payout to different customer?
-  // if (payment_method_id) await getPaymentMethodForPolicy(payment_method_id, invoice.policy_id);
+  if (payment_method_id) await getPaymentMethodForPolicy(payment_method_id, invoice.policy_id);
 
   const refunds = (await storage.listRefunds()).filter(r => r.invoice_id === invoice_id && r.status !== 'FAILED');
   const refundedPerPayment = (paymentId: string) => refunds

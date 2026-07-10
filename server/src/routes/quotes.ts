@@ -133,7 +133,8 @@ router.post('/:quote_id', asyncHandler(async (req, res) => {
   };
 
   await storage.createPolicy(policy);
-  await storage.setRatingProfile(policyId, (await storage.getRatingProfile(quote.id))!);
+  const ratingProfile = await storage.getRatingProfile(quote.id);
+  await storage.setRatingProfile(policyId, ratingProfile!);
   await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
 
   await audit(req, 'POLICY_BOUND', 'POLICY', policyId, {

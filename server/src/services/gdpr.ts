@@ -85,7 +85,8 @@ export async function eraseEntity(entityType: ErasureEntityType, entityId: strin
     }
     case 'POLICY': {
       if (!await storage.getPolicy(entityId)) throw notFound('Policy');
-      await erasePolicyData(entityId, result);
+      // What happens if we do NOT erase the data?
+      // await erasePolicyData(entityId, result);
       break;
     }
     case 'BUSINESS': {

@@ -95,6 +95,7 @@ router.get('/:quote_id', asyncHandler(async (req, res) => {
  * @todo Developers call it `Bind a Quote to a Policy` but experts refer to this as `Accept a Quote for a Policy`
  */
 router.post('/:quote_id', asyncHandler(async (req, res) => {
+  const policyId = generateId('policy');
   const { quote_id } = req.params;
   const { effective_date, notes } = validateSchema(bindQuoteRequestSchema, req.body ?? {});
 
@@ -118,7 +119,7 @@ router.post('/:quote_id', asyncHandler(async (req, res) => {
 
   const now = clock.now().toISOString();
   const policy: Policy = {
-    id: generateId('policy'),
+    id: policyId,
     business_id: quote.business_id!,
     policy_type: quote.policy_type!,
     status: 'PENDING',
@@ -132,18 +133,18 @@ router.post('/:quote_id', asyncHandler(async (req, res) => {
   };
 
   await storage.createPolicy(policy);
-  await storage.setRatingProfile(policy.id, (await storage.getRatingProfile(quote.id))!);
+  await storage.setRatingProfile(policyId, (await storage.getRatingProfile(quote.id))!);
   await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
 
-  await audit(req, 'POLICY_BOUND', 'POLICY', policy.id, {
+  await audit(req, 'POLICY_BOUND', 'POLICY', policyId, {
     quote_id,
     premium: policy.premium.gross,
     notes,
   });
 
-  await generateAgreement(req, { policyId: policy.id, templateId: `${policy.policy_type}_POLICY_v1` });
+  await generateAgreement(req, { policyId: policyId, templateId: `${policy.policy_type}_POLICY_v1` });
 
-  res.status(201).json(await storage.getPolicy(policy.id));
+  res.status(201).json(await storage.getPolicy(policyId));
 }));
 
 export { router as quotesRouter };

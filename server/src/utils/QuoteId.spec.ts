@@ -1,7 +1,7 @@
 import {QuoteId} from "./idGenerator";
 
 const isQuoteId = (candidate: string): candidate is QuoteId => {
-    throw new Error("TODO: Implement me!");
+    return /^quote_(?:[0-9a-fA-F]{32})$/.test(candidate)
 };
 
 describe("Quote ID", () => {

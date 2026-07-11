@@ -105,7 +105,8 @@ const makeQuotesRouterV2 = (
    */
   router.post('/:quote_id', asyncHandler(async (req, res) => {
     const policyId = generateId('policy');
-    const { quote_id } = req.params;
+    const urlParameters = req.params;
+    const { quote_id } = urlParameters;
     const { effective_date, notes } = validateSchema(bindQuoteRequestSchema, req.body ?? {});
 
     const existing = await storage.getQuote(quote_id);

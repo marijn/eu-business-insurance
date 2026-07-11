@@ -2,6 +2,10 @@ export type Clock = {
   now: () => Date
 };
 
+export const SystemClock: Clock = {
+  now: (): Date => new Date(),
+}
+
 export const clock: Clock = {
   now: (): Date => new Date(),
 };

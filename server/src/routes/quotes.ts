@@ -39,66 +39,6 @@ router.get('/:quote_id', asyncHandler(async (req, res) => {
 }));
 
 /**
- * @todo Developers call it `Bind a Quote to a Policy` but experts refer to this as `Accept a Quote for a Policy`
- */
-router.post('/:quote_id', asyncHandler(async (req, res) => {
-  const policyId = generateId('policy');
-  const { quote_id } = req.params;
-  const { effective_date, notes } = validateSchema(bindQuoteRequestSchema, req.body ?? {});
-
-  const existing = await storage.getQuote(quote_id);
-  if (!existing) throw notFound('Quote');
-  const quote = await refreshQuote(existing);
-  // TODO: Cover this branch in a test
-  if (quote.status !== 'PENDING') {
-    throw badRequest(`Quote is ${quote.status} and can no longer be bound`);
-  }
-
-  const term = {
-    start_date: effective_date || quote.term!.start_date,
-    end_date: quote.term!.end_date,
-  };
-  if (term.start_date < quote.term!.start_date || term.start_date >= term.end_date) {
-    throw badRequest(
-      `effective_date must be within the quoted term ${quote.term!.start_date}..${quote.term!.end_date}`,
-      'effective_date'
-    );
-  }
-
-  const now = clock.now().toISOString();
-  const policy: Policy = {
-    id: policyId,
-    business_id: quote.business_id!,
-    policy_type: quote.policy_type!,
-    status: 'PENDING',
-    premium: quote.premium,
-    coverage: quote.coverage,
-    term,
-    invoices: [],
-    endorsements: [],
-    created_at: now,
-    updated_at: now,
-  };
-
-  await storage.createPolicy(policy);
-  const ratingProfile = await storage.getRatingProfile(quote.id);
-  await storage.setRatingProfile(policyId, ratingProfile!);
-  await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
-
-  await audit(req, 'POLICY_BOUND', 'POLICY', policyId, {
-    quote_id,
-    premium: policy.premium.gross,
-    notes,
-  });
-
-  await generateAgreement(req, { policyId: policyId, templateId: `${policy.policy_type}_POLICY_v1` });
-
-  const finalPolicy = await storage.getPolicy(policyId);
-
-  res.status(201).json(finalPolicy);
-}));
-
-/**
  * Still not a pure function because it relies on the global `storage` to be available.
  */
 const makeQuotesRouterV2 = (
@@ -158,6 +98,66 @@ const makeQuotesRouterV2 = (
     });
 
     res.status(201).json(quote);
+  }));
+
+  /**
+   * @todo Developers call it `Bind a Quote to a Policy` but experts refer to this as `Accept a Quote for a Policy`
+   */
+  router.post('/:quote_id', asyncHandler(async (req, res) => {
+    const policyId = generateId('policy');
+    const { quote_id } = req.params;
+    const { effective_date, notes } = validateSchema(bindQuoteRequestSchema, req.body ?? {});
+
+    const existing = await storage.getQuote(quote_id);
+    if (!existing) throw notFound('Quote');
+    const quote = await refreshQuote(existing);
+    // TODO: Cover this branch in a test
+    if (quote.status !== 'PENDING') {
+      throw badRequest(`Quote is ${quote.status} and can no longer be bound`);
+    }
+
+    const term = {
+      start_date: effective_date || quote.term!.start_date,
+      end_date: quote.term!.end_date,
+    };
+    if (term.start_date < quote.term!.start_date || term.start_date >= term.end_date) {
+      throw badRequest(
+          `effective_date must be within the quoted term ${quote.term!.start_date}..${quote.term!.end_date}`,
+          'effective_date'
+      );
+    }
+
+    const now = clock.now().toISOString();
+    const policy: Policy = {
+      id: policyId,
+      business_id: quote.business_id!,
+      policy_type: quote.policy_type!,
+      status: 'PENDING',
+      premium: quote.premium,
+      coverage: quote.coverage,
+      term,
+      invoices: [],
+      endorsements: [],
+      created_at: now,
+      updated_at: now,
+    };
+
+    await storage.createPolicy(policy);
+    const ratingProfile = await storage.getRatingProfile(quote.id);
+    await storage.setRatingProfile(policyId, ratingProfile!);
+    await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
+
+    await audit(req, 'POLICY_BOUND', 'POLICY', policyId, {
+      quote_id,
+      premium: policy.premium.gross,
+      notes,
+    });
+
+    await generateAgreement(req, { policyId: policyId, templateId: `${policy.policy_type}_POLICY_v1` });
+
+    const finalPolicy = await storage.getPolicy(policyId);
+
+    res.status(201).json(finalPolicy);
   }));
 
   return router;

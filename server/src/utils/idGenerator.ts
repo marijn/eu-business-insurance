@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 
 const prefixes = {
   quote: 'quote',
@@ -33,4 +33,3 @@ export function generateClaimNumber(): string {
   return `CL-${year}-${randomNum}`;
 }
 
-export type QuoteId = `quote_${string}`

@@ -115,7 +115,8 @@ const makeQuotesRouterV2 = (
     }
 
     const quote_id = maybe_quote_id as QuoteId;
-    const { effective_date, notes } = validateSchema(bindQuoteRequestSchema, req.body ?? {});
+    const validated_request = validateSchema(bindQuoteRequestSchema, req.body ?? {});
+    const { effective_date, notes } = validated_request;
 
     const existing = await storage.getQuote(quote_id);
     if (!existing) throw notFound('Quote');

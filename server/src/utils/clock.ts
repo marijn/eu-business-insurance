@@ -6,6 +6,10 @@ export const SystemClock: Clock = {
   now: (): Date => new Date(),
 }
 
+/**
+ * @deprecated
+ * @see SystemClock
+ */
 export const clock: Clock = {
   now: (): Date => new Date(),
 };

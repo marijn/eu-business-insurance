@@ -1,8 +1,4 @@
-import {QuoteId} from "./idGenerator";
-
-const isQuoteId = (candidate: string): candidate is QuoteId => {
-    return /^quote_(?:[0-9a-fA-F]{32})$/.test(candidate)
-};
+import {isQuoteId} from "./QuoteId";
 
 describe("Quote ID", () => {
     it("detects Quote ID", () => {

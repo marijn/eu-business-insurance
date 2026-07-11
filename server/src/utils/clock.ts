@@ -15,7 +15,7 @@ export const clock: Clock = {
 };
 
 export function today(): string {
-  return clock.now().toISOString().split('T')[0];
+  return SystemClock.now().toISOString().split('T')[0];
 }
 
 export function addDays(date: Date | string, days: number): Date {

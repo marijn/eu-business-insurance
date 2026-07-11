@@ -1,4 +1,6 @@
-export const clock = {
+export const clock: {
+  now: () => Date
+} = {
   now: (): Date => new Date(),
 };
 

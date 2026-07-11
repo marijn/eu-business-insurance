@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { generateId } from '../utils/idGenerator';
+import {GenerateId, generateId} from '../utils/idGenerator';
 import { storage } from '../storage';
 import { asyncHandler, badRequest, notFound } from '../middleware/errorHandler';
 import { validateSchema, quoteRequestSchema, bindQuoteRequestSchema, paginate } from '../utils/validation';
 import { Policy, Quote, QuoteList, QuoteRequest } from '../types';
-import { clock, addDays } from '../utils/clock';
+import {clock, addDays, Clock} from '../utils/clock';
 import { audit } from '../services/audit';
 import { refreshQuote } from '../services/lifecycle';
 import { generateAgreement } from '../services/agreements';
@@ -17,59 +17,6 @@ import {
 } from '../services/pricing';
 
 const router = Router();
-
-const QUOTE_VALIDITY_DAYS = 7;
-
-router.post('/', asyncHandler(async (req, res) => {
-  const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
-  const { business_details, coverage_request, term, policy_type } = quoteRequest;
-
-  assertEuCountry(business_details.country, 'business_details.country');
-  assertCoverageAllowed(coverage_request, 'coverage_request');
-  if (term.start_date >= term.end_date) {
-    throw badRequest('Term end_date must be after start_date', 'term.end_date');
-  }
-  if (policy_type === 'WORKERS_COMP' && !business_details.employee_count) {
-    throw badRequest('employee_count is required for WORKERS_COMP', 'business_details.employee_count');
-  }
-
-  const profile = profileFromBusinessDetails(business_details);
-  const coverage = {
-    limits: { ...coverage_request.limits },
-    deductible: coverage_request.deductible,
-    add_ons: coverage_request.add_ons || [],
-  };
-  const assessment = assess(policy_type, profile, coverage);
-
-  const now = clock.now();
-  const quote: Quote = {
-    id: generateId('quote'),
-    status: 'PENDING',
-    premium: buildPremium(assessment.final_premium, business_details.country),
-    coverage: { ...coverage, exclusions: assessment.exclusions },
-    underwriting: {
-      risk_score: assessment.risk_score,
-      requirements: assessment.requirements,
-      exclusions: assessment.exclusions,
-    },
-    expiry_date: addDays(now, QUOTE_VALIDITY_DAYS).toISOString(),
-    created_at: now.toISOString(),
-    business_id: quoteRequest.business_id,
-    policy_type,
-    term: { ...term },
-  };
-
-  await storage.createQuote(quote);
-  await storage.setRatingProfile(quote.id, profile);
-
-  await audit(req, 'QUOTE_CREATED', 'QUOTE', quote.id, {
-    business_id: quoteRequest.business_id,
-    policy_type,
-    premium: quote.premium.gross,
-  });
-
-  res.status(201).json(quote);
-}));
 
 router.get('/', asyncHandler(async (req, res) => {
   const { business_id, policy_type, status } = req.query;
@@ -151,4 +98,69 @@ router.post('/:quote_id', asyncHandler(async (req, res) => {
   res.status(201).json(finalPolicy);
 }));
 
-export { router as quotesRouter };
+/**
+ * Still not a pure function because it relies on the global `storage` to be available.
+ */
+const makeQuotesRouterV2 = (
+  clock: Clock,
+  generateId: GenerateId
+) => {
+  const router = Router();
+
+  const QUOTE_VALIDITY_DAYS = 7;
+
+  router.post('/', asyncHandler(async (req, res) => {
+    const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
+    const { business_details, coverage_request, term, policy_type } = quoteRequest;
+
+    assertEuCountry(business_details.country, 'business_details.country');
+    assertCoverageAllowed(coverage_request, 'coverage_request');
+    if (term.start_date >= term.end_date) {
+      throw badRequest('Term end_date must be after start_date', 'term.end_date');
+    }
+    if (policy_type === 'WORKERS_COMP' && !business_details.employee_count) {
+      throw badRequest('employee_count is required for WORKERS_COMP', 'business_details.employee_count');
+    }
+
+    const profile = profileFromBusinessDetails(business_details);
+    const coverage = {
+      limits: { ...coverage_request.limits },
+      deductible: coverage_request.deductible,
+      add_ons: coverage_request.add_ons || [],
+    };
+    const assessment = assess(policy_type, profile, coverage);
+
+    const now = clock.now();
+    const quote: Quote = {
+      id: generateId('quote'),
+      status: 'PENDING',
+      premium: buildPremium(assessment.final_premium, business_details.country),
+      coverage: { ...coverage, exclusions: assessment.exclusions },
+      underwriting: {
+        risk_score: assessment.risk_score,
+        requirements: assessment.requirements,
+        exclusions: assessment.exclusions,
+      },
+      expiry_date: addDays(now, QUOTE_VALIDITY_DAYS).toISOString(),
+      created_at: now.toISOString(),
+      business_id: quoteRequest.business_id,
+      policy_type,
+      term: { ...term },
+    };
+
+    await storage.createQuote(quote);
+    await storage.setRatingProfile(quote.id, profile);
+
+    await audit(req, 'QUOTE_CREATED', 'QUOTE', quote.id, {
+      business_id: quoteRequest.business_id,
+      policy_type,
+      premium: quote.premium.gross,
+    });
+
+    res.status(201).json(quote);
+  }));
+
+  return router;
+}
+
+export { router as quotesRouter, makeQuotesRouterV2 };

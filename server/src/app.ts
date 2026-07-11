@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 
-import { quotesRouter } from './routes/quotes';
+import { quotesRouter, makeQuotesRouterV2 } from './routes/quotes';
 import { policiesRouter } from './routes/policies';
 import { agreementsRouter } from './routes/agreements';
 import { invoicesRouter } from './routes/invoices';
@@ -18,6 +18,8 @@ import { webhooksRouter } from './routes/webhooks';
 
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { authenticate, authorize, authorizeResource, rateLimit } from './middleware/auth';
+import {SystemClock} from "./utils/clock";
+import {generateId} from "./utils/idGenerator";
 
 const app = express();
 
@@ -57,6 +59,7 @@ app.get('/', (req, res) => {
 app.use('/v1', authenticate);
 
 app.use('/v1/quotes', authorizeResource('policy'), quotesRouter);
+app.use('/v1/quotes', authorizeResource('policy'), makeQuotesRouterV2(SystemClock, generateId));
 app.use('/v1/policies', authorizeResource('policy'), policiesRouter);
 app.use('/v1/agreements', authorizeResource('policy'), agreementsRouter);
 app.use('/v1/invoices', authorizeResource('billing'), invoicesRouter);

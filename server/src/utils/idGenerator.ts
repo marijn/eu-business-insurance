@@ -21,6 +21,8 @@ const prefixes = {
 
 export type IdType = keyof typeof prefixes;
 
+export type GenerateId = (type: IdType) => string
+
 export function generateId(type: IdType): string {
   return `${prefixes[type]}_${uuidv4().replace(/-/g, '')}`;
 }

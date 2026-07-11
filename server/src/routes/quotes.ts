@@ -15,6 +15,7 @@ import {
   buildPremium,
   profileFromBusinessDetails,
 } from '../services/pricing';
+import {isQuoteId, QuoteId} from "../utils/QuoteId";
 
 const router = Router();
 
@@ -107,7 +108,13 @@ const makeQuotesRouterV2 = (
     const policyId = generateId('policy');
     const urlParameters = req.params;
     const maybe_quote_id = urlParameters.quote_id;
-    const quote_id = maybe_quote_id;
+
+    if (!isQuoteId(maybe_quote_id)) {
+      // We are being cautious by not halting anything of the old workflow, but we are starting to log the problem
+      console.error(`Provided quote ID ("${maybe_quote_id}") did not match expected format`);
+    }
+
+    const quote_id = maybe_quote_id as QuoteId;
     const { effective_date, notes } = validateSchema(bindQuoteRequestSchema, req.body ?? {});
 
     const existing = await storage.getQuote(quote_id);

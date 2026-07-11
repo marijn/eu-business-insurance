@@ -14,8 +14,11 @@ export const clock: Clock = {
   now: (): Date => new Date(),
 };
 
+/**
+ * @deprecated This function relies on the availability of global state
+ */
 export function today(): string {
-  return SystemClock.now().toISOString().split('T')[0];
+  return clock.now().toISOString().split('T')[0];
 }
 
 export function addDays(date: Date | string, days: number): Date {

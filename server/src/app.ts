@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 
-import { quotesRouter, makeQuotesRouterV2 } from './routes/quotes';
+import { quotesRouter } from './routes/quotes';
 import { policiesRouter } from './routes/policies';
 import { agreementsRouter } from './routes/agreements';
 import { invoicesRouter } from './routes/invoices';
@@ -21,6 +21,7 @@ import { authenticate, authorize, authorizeResource, rateLimit } from './middlew
 import {SystemClock} from "./utils/clock";
 import {generateId} from "./utils/idGenerator";
 import storage from "./storage";
+import {makeQuotesRouterV2} from "./closingDeals/legacyInteraction/QuotesRouterV2";
 
 const app = express();
 

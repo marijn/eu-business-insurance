@@ -5,7 +5,9 @@ import {pipe} from "fp-ts/function";
 const effectiveDateOf = (effectiveDate: string | null): Option.Option<LocalDate> => {
     return pipe(
         Option.fromNullable(effectiveDate),
-        Option.map((effectiveDate) => LocalDate.parse(effectiveDate))
+        Option.flatMap(
+            (effectiveDate) => Option.tryCatch(() => LocalDate.parse(effectiveDate))
+        )
     );
 };
 

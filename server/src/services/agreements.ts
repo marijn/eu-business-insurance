@@ -2,7 +2,7 @@ import { Request } from 'express';
 import { storage } from '../storage';
 import { Agreement } from '../types';
 import { generateId } from '../utils/idGenerator';
-import { clock } from '../utils/clock';
+import {Clock, clock} from '../utils/clock';
 import { badRequest } from '../middleware/errorHandler';
 import {actorId, auditV2} from './audit';
 
@@ -12,6 +12,7 @@ export async function generateAgreementV2(
     originatingIp: string | undefined,
     originatingUserAgent: string | undefined,
     originatingActor: string,
+    clock: Clock,
     options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
 ): Promise<Agreement> {
   const policy = (await storage.getPolicy(options.policyId))!;
@@ -96,5 +97,5 @@ export async function generateAgreement(
   const originatingUserAgent = req?.get('user-agent');
   const originatingActor = actorId(req);
 
-  return await generateAgreementV2(originatingIp, originatingUserAgent, originatingActor, options);
+  return await generateAgreementV2(originatingIp, originatingUserAgent, originatingActor, clock, options);
 }

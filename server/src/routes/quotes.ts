@@ -186,6 +186,7 @@ const makeQuotesRouterV2 = (
       req?.ip,
       req?.get('user-agent'),
       actorId(req),
+      clock,
       {
         policyId: policyId,
         templateId: `${policy.policy_type}_POLICY_v1`

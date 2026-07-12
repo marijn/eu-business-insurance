@@ -96,7 +96,8 @@ const makeQuotesRouterV2 = (
       req,
       'QUOTE_CREATED',
       'QUOTE',
-      quote.id, {
+      quote.id,
+      {
         business_id: quoteRequest.business_id,
         policy_type,
         premium: quote.premium.gross,

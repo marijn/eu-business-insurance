@@ -96,7 +96,7 @@ describe("Characterization test of quotes endpoint", () => {
     });
 
     test("Calling `POST /quotes/:quote_id` for a non-existent quote returns an error", async () => {
-        const actualBindResponse = await fetch(`${host}/v1/quotes/quote_aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`, {
+        const actualBindResponse = await fetch(`${host}/v1/quotes/quote_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-API-KEY': 'test-api-key-1' },
             body: JSON.stringify({

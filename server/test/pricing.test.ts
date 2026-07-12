@@ -146,6 +146,6 @@ describe('quote validation', () => {
     expect((await api('GET', '/quotes?status=ACCEPTED')).body.total).toBe(0);
     expect((await api('GET', '/quotes?limit=1&offset=1')).body).toMatchObject({ total: 2, limit: 1, offset: 1 });
     expect((await api('GET', '/quotes/quote_missing')).status).toBe(404);
-    expect((await api('POST', '/quotes/quote_missing', {})).status).toBe(404);
+    expect((await api('POST', '/quotes/quote_91bc01a664664eefa887c38bf7089980', {})).status).toBe(404);
   });
 });

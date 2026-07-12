@@ -128,6 +128,8 @@ const makeQuotesRouterV2 = (
     const effective_date = validated_request.effective_date;
     const notes = validated_request.notes;
 
+    const originatingIp = req?.ip;
+
     const existing = await storage.getQuote(quote_id);
     if (!existing) throw notFound('Quote');
     const quote = await refreshQuote(existing);
@@ -168,7 +170,7 @@ const makeQuotesRouterV2 = (
     await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
 
     await auditV2(
-      req?.ip,
+      originatingIp,
       req?.get('user-agent'),
       actorId(req),
       'POLICY_BOUND',
@@ -183,7 +185,7 @@ const makeQuotesRouterV2 = (
     );
 
     await generateAgreementV2(
-      req?.ip,
+      originatingIp,
       req?.get('user-agent'),
       actorId(req),
       clock,

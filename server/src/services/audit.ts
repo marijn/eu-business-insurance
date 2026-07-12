@@ -14,14 +14,36 @@ export async function audit(
   entityId: string,
   metadata?: Record<string, unknown>
 ): Promise<AuditLogEntry> {
+  return auditV2(
+      req?.ip,
+      req?.get('user-agent'),
+      actorId(req),
+      action,
+      entityType,
+      entityId,
+      clock.now(),
+      metadata
+  );
+}
+
+export async function auditV2(
+  originatingIp: string | undefined,
+  originatingUserAgent: string | undefined,
+  originatingActor: string,
+  action: AuditAction,
+  entityType: AuditEntityType,
+  entityId: string,
+  operationOccurredAt: Date,
+  metadata?: Record<string, unknown>
+): Promise<AuditLogEntry> {
   return await storage.createAuditLog({
     action,
     entity_type: entityType,
     entity_id: entityId,
-    user_id: actorId(req),
-    timestamp: clock.now().toISOString(),
+    user_id: originatingActor,
+    timestamp: operationOccurredAt.toISOString(),
     metadata,
-    ip_address: req?.ip,
-    user_agent: req?.get('user-agent'),
+    ip_address: originatingIp,
+    user_agent: originatingUserAgent,
   });
 }

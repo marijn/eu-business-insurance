@@ -5,6 +5,7 @@ describe("Effective date", () => {
     const sensibleExamples = [
         null,
         "2026-12-01",
+        "2024-02-29",
     ];
 
     test.each(sensibleExamples)("Convert the effective date to and from a text representation", (example) => {

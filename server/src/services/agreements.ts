@@ -4,7 +4,7 @@ import { Agreement } from '../types';
 import { generateId } from '../utils/idGenerator';
 import { clock } from '../utils/clock';
 import { badRequest } from '../middleware/errorHandler';
-import {actorId, audit, auditV2} from './audit';
+import {actorId, auditV2} from './audit';
 
 const UNSIGNED = ['DRAFT', 'PENDING_SIGNATURE'];
 

@@ -29,4 +29,15 @@ describe("Effective date", () => {
         const expected = example;
         expect(actual).toStrictEqual(expected);
     });
+
+    const nonSensibleExamples = [
+        "2026-13-01",
+        "2026-02-29",
+    ];
+    test.each(nonSensibleExamples)("Ignores non-sensical dates", (nonSensibleExample: string) => {
+        const actual = effectiveDateOf(nonSensibleExample);
+
+        const expected = Option.none;
+        expect(actual).toStrictEqual(expected);
+    })
 });

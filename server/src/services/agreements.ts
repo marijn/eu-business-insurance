@@ -8,14 +8,12 @@ import {actorId, auditV2} from './audit';
 
 const UNSIGNED = ['DRAFT', 'PENDING_SIGNATURE'];
 
-export async function generateAgreement(
-  req: Request | undefined,
-  options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
+export async function generateAgreementV2(
+    originatingIp: string | undefined,
+    originatingUserAgent: string | undefined,
+    originatingActor: string,
+    options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
 ): Promise<Agreement> {
-  const originatingIp = req?.ip;
-  const originatingUserAgent = req?.get('user-agent');
-  const originatingActor = actorId(req);
-
   const policy = (await storage.getPolicy(options.policyId))!;
   const endorsement = options.endorsementId
     ? policy.endorsements?.find((e) => e.id === options.endorsementId)
@@ -88,4 +86,15 @@ export async function generateAgreement(
     }
   );
   return agreement;
+}
+
+export async function generateAgreement(
+  req: Request | undefined,
+  options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
+): Promise<Agreement> {
+  const originatingIp = req?.ip;
+  const originatingUserAgent = req?.get('user-agent');
+  const originatingActor = actorId(req);
+
+  return await generateAgreementV2(originatingIp, originatingUserAgent, originatingActor, options);
 }

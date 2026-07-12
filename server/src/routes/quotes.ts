@@ -92,11 +92,16 @@ const makeQuotesRouterV2 = (
     await storage.createQuote(quote);
     await storage.setRatingProfile(quote.id, profile);
 
-    await audit(req, 'QUOTE_CREATED', 'QUOTE', quote.id, {
-      business_id: quoteRequest.business_id,
-      policy_type,
-      premium: quote.premium.gross,
-    });
+    await audit(
+      req,
+      'QUOTE_CREATED',
+      'QUOTE',
+      quote.id, {
+        business_id: quoteRequest.business_id,
+        policy_type,
+        premium: quote.premium.gross,
+      }
+    );
 
     res.status(201).json(quote);
   }));
@@ -158,11 +163,16 @@ const makeQuotesRouterV2 = (
     await storage.setRatingProfile(policyId, ratingProfile!);
     await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
 
-    await audit(req, 'POLICY_BOUND', 'POLICY', policyId, {
-      quote_id,
-      premium: policy.premium.gross,
-      notes,
-    });
+    await audit(
+      req,
+      'POLICY_BOUND',
+      'POLICY',
+      policyId, {
+        quote_id,
+        premium: policy.premium.gross,
+        notes,
+      }
+    );
 
     await generateAgreement(req, { policyId: policyId, templateId: `${policy.policy_type}_POLICY_v1` });
 

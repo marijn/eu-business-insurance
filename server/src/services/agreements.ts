@@ -12,6 +12,8 @@ export async function generateAgreement(
   req: Request | undefined,
   options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
 ): Promise<Agreement> {
+  const originatingIp = req?.ip;
+
   const policy = (await storage.getPolicy(options.policyId))!;
   const endorsement = options.endorsementId
     ? policy.endorsements?.find((e) => e.id === options.endorsementId)
@@ -47,7 +49,7 @@ export async function generateAgreement(
     await storage.updateAgreement(previous.id, { status: 'VOIDED' });
 
     await auditV2(
-      req?.ip,
+      originatingIp,
       req?.get('user-agent'),
       actorId(req),
       'AGREEMENT_VOIDED',
@@ -69,7 +71,7 @@ export async function generateAgreement(
   }
 
   await auditV2(
-    req?.ip,
+    originatingIp,
     req?.get('user-agent'),
     actorId(req),
     'AGREEMENT_GENERATED',

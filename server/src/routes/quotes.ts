@@ -5,7 +5,7 @@ import { asyncHandler, badRequest, notFound } from '../middleware/errorHandler';
 import { validateSchema, quoteRequestSchema, bindQuoteRequestSchema, paginate } from '../utils/validation';
 import { Policy, Quote, QuoteList, QuoteRequest } from '../types';
 import {clock, addDays, Clock} from '../utils/clock';
-import { audit } from '../services/audit';
+import {actorId, audit, auditV2} from '../services/audit';
 import { refreshQuote } from '../services/lifecycle';
 import { generateAgreement } from '../services/agreements';
 import {
@@ -163,11 +163,14 @@ const makeQuotesRouterV2 = (
     await storage.setRatingProfile(policyId, ratingProfile!);
     await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
 
-    await audit(
-      req,
+    await auditV2(
+      req?.ip,
+      req?.get('user-agent'),
+      actorId(req),
       'POLICY_BOUND',
       'POLICY',
       policyId,
+      clock.now(),
       {
         quote_id,
         premium: policy.premium.gross,

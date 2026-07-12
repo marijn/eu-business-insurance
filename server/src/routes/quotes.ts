@@ -20,7 +20,7 @@ import {isQuoteId, QuoteId} from "../utils/QuoteId";
 import * as Either from "fp-ts/Either";
 import * as Option from "fp-ts/Option";
 import {isPolicyId} from "../utils/PolicyId";
-import {effectiveDateOf} from "../utils/EffectiveDate";
+import {effectiveDateOf, effectiveDateToString} from "../utils/EffectiveDate";
 
 const router = Router();
 
@@ -51,7 +51,78 @@ const configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem = (
     storage: StorageType
 ) => {
   return async (command: AcceptQuoteForPolicy) => {
-    console.log("Hello from the new point of abstraction");
+    const quote_id = command.quote_id;
+    const effective_date = effectiveDateToString(Option.fromNullable(command.effective_date));
+    const policyId = command.policy_id;
+    const notes = command.notes;
+    const originatingIp = command.accepted_by.originating_ip ?? undefined;
+    const originatingUserAgent = command.accepted_by.originating_user_agent ?? undefined;
+    const originatingActor = command.accepted_by.actor_id;
+
+    const existing = await storage.getQuote(quote_id);
+    if (!existing) throw notFound('Quote');
+    const quote = await refreshQuote(existing);
+    // TODO: Cover this branch in a test
+    if (quote.status !== 'PENDING') {
+      throw badRequest(`Quote is ${quote.status} and can no longer be bound`);
+    }
+
+    const term = {
+      start_date: effective_date || quote.term!.start_date,
+      end_date: quote.term!.end_date,
+    };
+    if (term.start_date < quote.term!.start_date || term.start_date >= term.end_date) {
+      throw badRequest(
+          `effective_date must be within the quoted term ${quote.term!.start_date}..${quote.term!.end_date}`,
+          'effective_date'
+      );
+    }
+
+    const now = clock.now().toISOString();
+    const policy: Policy = {
+      id: policyId,
+      business_id: quote.business_id!,
+      policy_type: quote.policy_type!,
+      status: 'PENDING',
+      premium: quote.premium,
+      coverage: quote.coverage,
+      term,
+      invoices: [],
+      endorsements: [],
+      created_at: now,
+      updated_at: now,
+    };
+
+    await storage.createPolicy(policy);
+    const ratingProfile = await storage.getRatingProfile(quote.id);
+    await storage.setRatingProfile(policyId, ratingProfile!);
+    await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
+
+    await auditV2(
+        originatingIp,
+        originatingUserAgent,
+        originatingActor,
+        'POLICY_BOUND',
+        'POLICY',
+        policyId,
+        clock.now(),
+        {
+          quote_id,
+          premium: policy.premium.gross,
+          notes,
+        }
+    );
+
+    await generateAgreementV2(
+        originatingIp,
+        originatingUserAgent,
+        originatingActor,
+        clock,
+        {
+          policyId: policyId,
+          templateId: `${policy.policy_type}_POLICY_v1`
+        }
+    );
 
     return Either.right(undefined);
   };
@@ -182,71 +253,6 @@ const makeQuotesRouterV2 = (
     // Right now inspecting doesn't bring any value.
     // Over time this should be migrated to TaskEither<AnyAcceptQuoteError, void> to model all error states.
     await commandHandler(command);
-
-    const existing = await storage.getQuote(quote_id);
-    if (!existing) throw notFound('Quote');
-    const quote = await refreshQuote(existing);
-    // TODO: Cover this branch in a test
-    if (quote.status !== 'PENDING') {
-      throw badRequest(`Quote is ${quote.status} and can no longer be bound`);
-    }
-
-    const term = {
-      start_date: effective_date || quote.term!.start_date,
-      end_date: quote.term!.end_date,
-    };
-    if (term.start_date < quote.term!.start_date || term.start_date >= term.end_date) {
-      throw badRequest(
-          `effective_date must be within the quoted term ${quote.term!.start_date}..${quote.term!.end_date}`,
-          'effective_date'
-      );
-    }
-
-    const now = clock.now().toISOString();
-    const policy: Policy = {
-      id: policyId,
-      business_id: quote.business_id!,
-      policy_type: quote.policy_type!,
-      status: 'PENDING',
-      premium: quote.premium,
-      coverage: quote.coverage,
-      term,
-      invoices: [],
-      endorsements: [],
-      created_at: now,
-      updated_at: now,
-    };
-
-    await storage.createPolicy(policy);
-    const ratingProfile = await storage.getRatingProfile(quote.id);
-    await storage.setRatingProfile(policyId, ratingProfile!);
-    await storage.updateQuote(quote_id, { status: 'ACCEPTED' });
-
-    await auditV2(
-      originatingIp,
-      originatingUserAgent,
-      originatingActor,
-      'POLICY_BOUND',
-      'POLICY',
-      policyId,
-      clock.now(),
-      {
-        quote_id,
-        premium: policy.premium.gross,
-        notes,
-      }
-    );
-
-    await generateAgreementV2(
-      originatingIp,
-      originatingUserAgent,
-      originatingActor,
-      clock,
-      {
-        policyId: policyId,
-        templateId: `${policy.policy_type}_POLICY_v1`
-      }
-    );
 
     const finalPolicy = await storage.getPolicy(policyId);
 

@@ -15,7 +15,12 @@ import {
   buildPremium,
   profileFromBusinessDetails,
 } from '../services/pricing';
+import {AcceptQuoteForPolicy} from "../closingDeals/domain/AcceptAQuoteForAPolicy";
 import {isQuoteId, QuoteId} from "../utils/QuoteId";
+import * as Either from "fp-ts/Either";
+import * as Option from "fp-ts/Option";
+import {isPolicyId} from "../utils/PolicyId";
+import {effectiveDateOf} from "../utils/EffectiveDate";
 
 const router = Router();
 
@@ -39,6 +44,19 @@ router.get('/:quote_id', asyncHandler(async (req, res) => {
   res.json(await refreshQuote(quote));
 }));
 
+type StorageType = typeof storage;
+
+const configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem = (
+    clock: Clock,
+    storage: StorageType
+) => {
+  return async (command: AcceptQuoteForPolicy) => {
+    console.log("Hello from the new point of abstraction");
+
+    return Either.right(undefined);
+  };
+}
+
 /**
  * Still not a pure function because it relies on the global `storage` to be available.
  */
@@ -49,6 +67,8 @@ const makeQuotesRouterV2 = (
   const router = Router();
 
   const QUOTE_VALIDITY_DAYS = 7;
+
+  const commandHandler = configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem(clock, storage);
 
   router.post('/', asyncHandler(async (req, res) => {
     const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
@@ -123,14 +143,45 @@ const makeQuotesRouterV2 = (
       console.error(`Provided quote ID ("${maybe_quote_id}") did not match expected format`);
     }
 
+    if (!isPolicyId(policyId)) {
+      // The types say this could theoretically happen, but in practice it cannot, because `generateId()` is under our
+      // control and honors the expected format.
+      // That is why I find throwing an Error an acceptable trade-off, even though that is a breaking change
+      throw new Error(`Generated policy ID ("${policyId}") did not match expected format`);
+    }
+
     const quote_id = maybe_quote_id as QuoteId;
     const validated_request = validateSchema(bindQuoteRequestSchema, req.body ?? {});
     const effective_date = validated_request.effective_date;
-    const notes = validated_request.notes;
-
+    const notes = validated_request.notes || "";
+    // TODO: We should have a debate about the model that powers the audit log.
+    //       In the absence of more domain-oriented actor information, this data is considered to be part of the model.
+    //       Over time the company may be better served by moving this entire process out of the main process, by basing
+    //       it on message metadata.
     const originatingIp = req?.ip;
     const originatingUserAgent = req?.get('user-agent');
     const originatingActor = actorId(req);
+
+    const command: AcceptQuoteForPolicy = {
+      _named: "Accept quote for policy!",
+      quote_id: quote_id,
+      policy_id: policyId,
+      // TODO: Let's research what the default effective_date is when no effective_date is provided and set that here,
+      //       rather than somewhere deeper in the stack.
+      //       In order to keep progress we ignore it for now, and won't address it immediately, unless it hurts us.
+      effective_date: Option.toNullable(effectiveDateOf(effective_date)),
+      notes: notes,
+      accepted_by: {
+        actor_id: originatingActor,
+        originating_user_agent: originatingUserAgent ?? null,
+        originating_ip: originatingIp ?? null
+      }
+    };
+
+    // Things get worse before they get better, it returns Promise<Either<never, void>>
+    // Right now inspecting doesn't bring any value.
+    // Over time this should be migrated to TaskEither<AnyAcceptQuoteError, void> to model all error states.
+    await commandHandler(command);
 
     const existing = await storage.getQuote(quote_id);
     if (!existing) throw notFound('Quote');

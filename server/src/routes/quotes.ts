@@ -1,17 +1,17 @@
-import { Router } from 'express';
+import {Router} from 'express';
 import {GenerateId} from '../utils/idGenerator';
-import { storage } from '../storage';
-import { asyncHandler, badRequest, notFound } from '../middleware/errorHandler';
-import { validateSchema, quoteRequestSchema, bindQuoteRequestSchema, paginate } from '../utils/validation';
-import { Policy, Quote, QuoteList, QuoteRequest } from '../types';
+import {storage, StorageType} from '../storage';
+import {asyncHandler, badRequest, notFound} from '../middleware/errorHandler';
+import {bindQuoteRequestSchema, paginate, quoteRequestSchema, validateSchema} from '../utils/validation';
+import {Policy, Quote, QuoteList, QuoteRequest} from '../types';
 import {addDays, Clock} from '../utils/clock';
 import {actorId, auditV2} from '../services/audit';
-import { refreshQuote } from '../services/lifecycle';
+import {refreshQuote} from '../services/lifecycle';
 import {generateAgreementV2} from '../services/agreements';
 import {
-  assess,
   assertCoverageAllowed,
   assertEuCountry,
+  assess,
   buildPremium,
   profileFromBusinessDetails,
 } from '../services/pricing';
@@ -43,8 +43,6 @@ router.get('/:quote_id', asyncHandler(async (req, res) => {
   if (!quote) throw notFound('Quote');
   res.json(await refreshQuote(quote));
 }));
-
-type StorageType = typeof storage;
 
 const configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem = (
     clock: Clock,

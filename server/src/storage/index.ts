@@ -1,21 +1,21 @@
 import {
-  AuditLogEntry,
-  Quote,
-  Policy,
-  Agreement,
-  Invoice,
-  Payment,
-  PaymentMethod,
-  Claim,
-  Payout,
-  Document,
-  Refund,
-  RatingProfile,
+    Agreement,
+    AuditLogEntry,
+    Claim,
+    Document,
+    Invoice,
+    Payment,
+    PaymentMethod,
+    Payout,
+    Policy,
+    Quote,
+    RatingProfile,
+    Refund,
 } from '../types';
-import { generateId } from '../utils/idGenerator';
-import { Collection, StorageBackend } from './backend';
-import { MemoryBackend } from './memory';
-import { MySqlBackend } from './mysql';
+import {generateId} from '../utils/idGenerator';
+import {Collection, StorageBackend} from './backend';
+import {MemoryBackend} from './memory';
+import {MySqlBackend} from './mysql';
 
 export function createBackend(env: NodeJS.ProcessEnv = process.env): StorageBackend {
   const driver = env.STORAGE || 'memory';
@@ -158,3 +158,4 @@ export const storage = {
 };
 
 export default storage;
+export type StorageType = typeof storage;

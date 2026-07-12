@@ -1,23 +1,5 @@
 import * as Option from "fp-ts/Option";
-import {LocalDate} from "js-joda";
-import {pipe} from "fp-ts/function";
-
-const effectiveDateOf = (effectiveDate: string | null): Option.Option<LocalDate> => {
-    return pipe(
-        Option.fromNullable(effectiveDate),
-        Option.flatMap(
-            (effectiveDate) => Option.tryCatch(() => LocalDate.parse(effectiveDate))
-        )
-    );
-};
-
-const effectiveDateToString = (effectiveDate: Option.Option<LocalDate>): string | null => {
-    return pipe(
-        effectiveDate,
-        Option.map((effectiveDate) => effectiveDate.toString()),
-        Option.toNullable
-    );
-}
+import {effectiveDateOf, effectiveDateToString} from "./EffectiveDate";
 
 describe("Effective date", () => {
     const sensibleExamples = [

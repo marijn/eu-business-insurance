@@ -45,11 +45,15 @@ export async function generateAgreement(
 
   if (previous && UNSIGNED.includes(previous.status)) {
     await storage.updateAgreement(previous.id, { status: 'VOIDED' });
-    await audit(
-      req,
+
+    await auditV2(
+      req?.ip,
+      req?.get('user-agent'),
+      actorId(req),
       'AGREEMENT_VOIDED',
       'AGREEMENT',
       previous.id,
+      clock.now(),
       {
         reason: 'SUPERSEDED',
         superseded_by: agreementId

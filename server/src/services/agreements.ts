@@ -4,7 +4,7 @@ import { Agreement } from '../types';
 import { generateId } from '../utils/idGenerator';
 import { clock } from '../utils/clock';
 import { badRequest } from '../middleware/errorHandler';
-import { audit } from './audit';
+import {actorId, audit, auditV2} from './audit';
 
 const UNSIGNED = ['DRAFT', 'PENDING_SIGNATURE'];
 
@@ -64,11 +64,14 @@ export async function generateAgreement(
     await storage.updatePolicy(policy.id, { agreement_id: agreementId, updated_at: clock.now().toISOString() });
   }
 
-  await audit(
-    req,
+  await auditV2(
+    req?.ip,
+    req?.get('user-agent'),
+    actorId(req),
     'AGREEMENT_GENERATED',
     'AGREEMENT',
     agreementId,
+    clock.now(),
     {
       policy_id: policy.id,
       endorsement_id: endorsement?.id,

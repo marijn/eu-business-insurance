@@ -45,7 +45,16 @@ export async function generateAgreement(
 
   if (previous && UNSIGNED.includes(previous.status)) {
     await storage.updateAgreement(previous.id, { status: 'VOIDED' });
-    await audit(req, 'AGREEMENT_VOIDED', 'AGREEMENT', previous.id, { reason: 'SUPERSEDED', superseded_by: agreementId });
+    await audit(
+      req,
+      'AGREEMENT_VOIDED',
+      'AGREEMENT',
+      previous.id,
+      {
+        reason: 'SUPERSEDED',
+        superseded_by: agreementId
+      }
+    );
   }
 
   if (endorsement) {
@@ -55,11 +64,17 @@ export async function generateAgreement(
     await storage.updatePolicy(policy.id, { agreement_id: agreementId, updated_at: clock.now().toISOString() });
   }
 
-  await audit(req, 'AGREEMENT_GENERATED', 'AGREEMENT', agreementId, {
-    policy_id: policy.id,
-    endorsement_id: endorsement?.id,
-    template_id: options.templateId,
-    language: options.language,
-  });
+  await audit(
+    req,
+    'AGREEMENT_GENERATED',
+    'AGREEMENT',
+    agreementId,
+    {
+      policy_id: policy.id,
+      endorsement_id: endorsement?.id,
+      template_id: options.templateId,
+      language: options.language,
+    }
+  );
   return agreement;
 }

@@ -3,7 +3,6 @@ import {effectiveDateOf, effectiveDateToString} from "./EffectiveDate";
 
 describe("Effective date", () => {
     const sensibleExamples = [
-        null,
         "2026-12-01",
         "2024-02-29",
     ];
@@ -16,10 +15,11 @@ describe("Effective date", () => {
     });
 
     const nonSensibleExamples = [
+        null,
         "2026-13-01",
         "2026-02-29",
     ];
-    test.each(nonSensibleExamples)("Ignores non-sensical dates", (nonSensibleExample: string) => {
+    test.each(nonSensibleExamples)("Ignores non-sensical dates", (nonSensibleExample) => {
         const actual = effectiveDateOf(nonSensibleExample);
 
         const expected = Option.none;

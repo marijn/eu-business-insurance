@@ -45,9 +45,6 @@ router.get('/:quote_id', asyncHandler(async (req, res) => {
   res.json(await refreshQuote(quote));
 }));
 
-/**
- * Still not a pure function because it relies on the global `storage` to be available.
- */
 const makeQuotesRouterV2 = (
   clock: Clock,
   storage: StorageType,

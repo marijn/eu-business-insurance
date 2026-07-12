@@ -7,6 +7,10 @@ export function actorId(req?: Request): string {
   return req?.user?.userId || 'system';
 }
 
+/**
+ * @deprecated
+ * @see auditV2
+ */
 export async function audit(
   req: Request | undefined,
   action: AuditAction,

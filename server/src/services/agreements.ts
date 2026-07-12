@@ -14,6 +14,7 @@ export async function generateAgreement(
 ): Promise<Agreement> {
   const originatingIp = req?.ip;
   const originatingUserAgent = req?.get('user-agent');
+  const originatingActor = actorId(req);
 
   const policy = (await storage.getPolicy(options.policyId))!;
   const endorsement = options.endorsementId
@@ -52,7 +53,7 @@ export async function generateAgreement(
     await auditV2(
       originatingIp,
       originatingUserAgent,
-      actorId(req),
+      originatingActor,
       'AGREEMENT_VOIDED',
       'AGREEMENT',
       previous.id,
@@ -74,7 +75,7 @@ export async function generateAgreement(
   await auditV2(
     originatingIp,
     originatingUserAgent,
-    actorId(req),
+    originatingActor,
     'AGREEMENT_GENERATED',
     'AGREEMENT',
     agreementId,

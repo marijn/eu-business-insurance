@@ -167,14 +167,21 @@ const makeQuotesRouterV2 = (
       req,
       'POLICY_BOUND',
       'POLICY',
-      policyId, {
+      policyId,
+      {
         quote_id,
         premium: policy.premium.gross,
         notes,
       }
     );
 
-    await generateAgreement(req, { policyId: policyId, templateId: `${policy.policy_type}_POLICY_v1` });
+    await generateAgreement(
+      req,
+      {
+        policyId: policyId,
+        templateId: `${policy.policy_type}_POLICY_v1`
+      }
+    );
 
     const finalPolicy = await storage.getPolicy(policyId);
 

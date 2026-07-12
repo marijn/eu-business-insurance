@@ -4,7 +4,7 @@
 type PolicyId = `pol_${string}`;
 
 const isPolicyId = (candidate: string): candidate is PolicyId => {
-    throw new Error("TODO: Implement me!");
+    return /^pol_[0-9a-fA-F]{32}$/.test(candidate)
 };
 
 describe("Policy ID", () => {

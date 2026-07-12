@@ -92,11 +92,14 @@ const makeQuotesRouterV2 = (
     await storage.createQuote(quote);
     await storage.setRatingProfile(quote.id, profile);
 
-    await audit(
-      req,
+    await auditV2(
+      req?.ip,
+      req?.get('user-agent'),
+      actorId(req),
       'QUOTE_CREATED',
       'QUOTE',
       quote.id,
+      clock.now(),
       {
         business_id: quoteRequest.business_id,
         policy_type,

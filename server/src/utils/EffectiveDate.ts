@@ -1,5 +1,5 @@
 import * as Option from "fp-ts/lib/Option";
-import {LocalDate} from "js-joda";
+import {LocalDate} from "@js-joda/core";
 import {pipe} from "fp-ts/lib/function";
 
 export const effectiveDateOf = (effectiveDate: string | null): Option.Option<LocalDate> => {

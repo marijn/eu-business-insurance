@@ -20,6 +20,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { authenticate, authorize, authorizeResource, rateLimit } from './middleware/auth';
 import {SystemClock} from "./utils/clock";
 import {generateId} from "./utils/idGenerator";
+import storage from "./storage";
 
 const app = express();
 
@@ -59,7 +60,7 @@ app.get('/', (req, res) => {
 app.use('/v1', authenticate);
 
 app.use('/v1/quotes', authorizeResource('policy'), quotesRouter);
-app.use('/v1/quotes', authorizeResource('policy'), makeQuotesRouterV2(SystemClock, generateId));
+app.use('/v1/quotes', authorizeResource('policy'), makeQuotesRouterV2(SystemClock, storage, generateId));
 app.use('/v1/policies', authorizeResource('policy'), policiesRouter);
 app.use('/v1/agreements', authorizeResource('policy'), agreementsRouter);
 app.use('/v1/invoices', authorizeResource('billing'), invoicesRouter);

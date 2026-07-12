@@ -133,6 +133,7 @@ const configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem = (
  */
 const makeQuotesRouterV2 = (
   clock: Clock,
+  storage: StorageType,
   generateId: GenerateId
 ) => {
   const router = Router();

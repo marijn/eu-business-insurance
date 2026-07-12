@@ -31,7 +31,7 @@ const makeQuotesRouterV2 = (
 
     const QUOTE_VALIDITY_DAYS = 7;
 
-    const commandHandler = configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem(clock, storage);
+    const handleAcceptQuoteForPolicy = configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem(clock, storage);
 
     router.post('/', asyncHandler(async (req, res) => {
         const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
@@ -144,7 +144,7 @@ const makeQuotesRouterV2 = (
         // Things get worse before they get better, it returns Promise<Either<never, void>>
         // Right now inspecting doesn't bring any value.
         // Over time this should be migrated to TaskEither<AnyAcceptQuoteError, void> to model all error states.
-        await commandHandler(command);
+        await handleAcceptQuoteForPolicy(command);
 
         const finalPolicy = await storage.getPolicy(policyId);
 

@@ -7,7 +7,7 @@ import { Policy, Quote, QuoteList, QuoteRequest } from '../types';
 import {clock, addDays, Clock} from '../utils/clock';
 import {actorId, audit, auditV2} from '../services/audit';
 import { refreshQuote } from '../services/lifecycle';
-import { generateAgreement } from '../services/agreements';
+import {generateAgreement, generateAgreementV2} from '../services/agreements';
 import {
   assess,
   assertCoverageAllowed,
@@ -182,8 +182,10 @@ const makeQuotesRouterV2 = (
       }
     );
 
-    await generateAgreement(
-      req,
+    await generateAgreementV2(
+      req?.ip,
+      req?.get('user-agent'),
+      actorId(req),
       {
         policyId: policyId,
         templateId: `${policy.policy_type}_POLICY_v1`

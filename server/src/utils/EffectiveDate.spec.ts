@@ -16,6 +16,7 @@ describe("Effective date", () => {
 
     const nonSensibleExamples = [
         null,
+        undefined,
         "2026-13-01",
         "2026-02-29",
     ];

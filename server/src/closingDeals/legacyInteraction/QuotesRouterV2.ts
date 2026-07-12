@@ -2,9 +2,6 @@ import {addDays, Clock} from "../../utils/clock";
 import {StorageType} from "../../storage";
 import {GenerateId} from "../../utils/idGenerator";
 import {Router} from "express";
-import {
-    configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem
-} from "../legacyInteration/PromiseToHandleAcceptQuoteForPolicyUsingLegacySystem";
 import {asyncHandler, badRequest} from "../../middleware/errorHandler";
 import {Quote, QuoteRequest} from "../../types";
 import {bindQuoteRequestSchema, quoteRequestSchema, validateSchema} from "../../utils/validation";
@@ -21,6 +18,9 @@ import {isPolicyId} from "../../utils/PolicyId";
 import {AcceptQuoteForPolicy} from "../domain/AcceptAQuoteForAPolicy";
 import * as Option from "fp-ts/lib/Option";
 import {effectiveDateOf} from "../../utils/EffectiveDate";
+import {
+    configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem
+} from "./ConfigurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem";
 
 const makeQuotesRouterV2 = (
     clock: Clock,

@@ -105,7 +105,9 @@ const makeQuotesRouterV2 = (
             }
         );
 
-        res.status(201).json(quote);
+        const finalQuote = quote;
+
+        res.status(201).json(finalQuote);
     }));
 
     /**

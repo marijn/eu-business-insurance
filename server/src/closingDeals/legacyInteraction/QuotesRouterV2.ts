@@ -17,10 +17,24 @@ import {isQuoteId, QuoteId} from "../../utils/QuoteId";
 import {isPolicyId} from "../../utils/PolicyId";
 import {AcceptQuoteForPolicy} from "../domain/AcceptAQuoteForAPolicy";
 import * as Option from "fp-ts/lib/Option";
+import * as Either from "fp-ts/Either";
 import {effectiveDateOf} from "../../utils/EffectiveDate";
 import {
     configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem
 } from "./ConfigurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem";
+import {LocalDate} from "@js-joda/core";
+import {RequestQuoteForPolicy} from "../domain/RequestQuoteForPolicy";
+
+const configurePromiseToHandleRequestQuoteForPolicyUsingLegacySystem = (
+    clock: Clock,
+    storage: StorageType
+) => {
+    return async (command: RequestQuoteForPolicy) => {
+        console.log("Hello from PromiseToHandleRequestQuoteForPolicyUsingLegacySystem");
+
+        return Either.right(undefined);
+    }
+}
 
 const makeQuotesRouterV2 = (
     clock: Clock,
@@ -31,6 +45,7 @@ const makeQuotesRouterV2 = (
 
     const QUOTE_VALIDITY_DAYS = 7;
 
+    const handleRequestQuoteForPolicy = configurePromiseToHandleRequestQuoteForPolicyUsingLegacySystem(clock, storage);
     const handleAcceptQuoteForPolicy = configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem(clock, storage);
 
     router.post('/', asyncHandler(async (req, res) => {
@@ -54,6 +69,30 @@ const makeQuotesRouterV2 = (
         const originatingIp = req?.ip;
         const originatingUserAgent = req?.get('user-agent');
         const originatingActor = actorId(req);
+
+        const command: RequestQuoteForPolicy = {
+            _named: "Request quote for policy!",
+            quote_id: quote_id,
+            business_id: businessId,
+            business_details: business_details,
+            coverage_request: coverage_request,
+            term: {
+                // Orders could have been placed for nonsensible dates in the past, how to deal with that?
+                start_date: LocalDate.parse(term.start_date),
+                end_date: LocalDate.parse(term.end_date),
+            },
+            policy_type: policy_type,
+            request_from: {
+                actor_id: originatingActor,
+                originating_user_agent: originatingUserAgent ?? null,
+                originating_ip: originatingIp ?? null
+            }
+        }
+
+        // Things get worse before they get better, it returns Promise<Either<never, void>>
+        // Right now inspecting doesn't bring any value.
+        // Over time this should be migrated to TaskEither<AnyRequestQuoteError, void> to model all error states.
+        await handleRequestQuoteForPolicy(command);
 
         assertEuCountry(business_details.country, 'business_details.country');
         assertCoverageAllowed(coverage_request, 'coverage_request');

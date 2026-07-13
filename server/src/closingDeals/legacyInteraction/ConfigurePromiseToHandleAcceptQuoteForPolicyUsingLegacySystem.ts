@@ -9,7 +9,6 @@ import {Policy} from "../../types";
 import {auditV2} from "../../services/audit";
 import {generateAgreementV2} from "../../services/agreements";
 import * as Either from "fp-ts/lib/Either";
-import {generateId} from "../../utils/idGenerator";
 import {generateAgreementId} from "../../utils/AgreementId";
 
 export const configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem = (

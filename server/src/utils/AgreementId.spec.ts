@@ -1,4 +1,8 @@
-import {isAgreementId} from "./AgreementId";
+import {AgreementId, isAgreementId} from "./AgreementId";
+
+const generateAgreementId = (): AgreementId => {
+    throw new Error("TODO: Implement me!");
+};
 
 describe("Agreement ID", () => {
     it("detects Agreement ID", () => {
@@ -13,5 +17,11 @@ describe("Agreement ID", () => {
         const actual = isAgreementId(incorrectExample);
 
         expect(actual).toBe(false);
+    })
+
+    it("Generates Agreement ID", () => {
+        const agreementId = generateAgreementId();
+        const actual = isAgreementId(agreementId);
+        expect(actual).toBe(true);
     })
 });

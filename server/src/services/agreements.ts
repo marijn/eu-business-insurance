@@ -97,5 +97,11 @@ export async function generateAgreement(
   const originatingUserAgent = req?.get('user-agent');
   const originatingActor = actorId(req);
 
-  return await generateAgreementV2(originatingIp, originatingUserAgent, originatingActor, clock, options);
+  return await generateAgreementV2(
+      originatingIp,
+      originatingUserAgent,
+      originatingActor,
+      clock,
+      options
+  );
 }

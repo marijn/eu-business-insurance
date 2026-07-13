@@ -15,6 +15,7 @@ export async function generateAgreementV2(
     clock: Clock,
     options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
 ): Promise<Agreement> {
+  const agreementId = generateId('agreement');
   const policy = (await storage.getPolicy(options.policyId))!;
   const endorsement = options.endorsementId
     ? policy.endorsements?.find((e) => e.id === options.endorsementId)
@@ -34,7 +35,6 @@ export async function generateAgreementV2(
     );
   }
 
-  const agreementId = generateId('agreement');
   const agreement: Agreement = await storage.createAgreement({
     id: agreementId,
     policy_id: policy.id,

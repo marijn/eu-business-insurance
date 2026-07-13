@@ -1,9 +1,4 @@
-import {AgreementId, isAgreementId} from "./AgreementId";
-import {v4 as uuidv4} from "uuid";
-
-const generateAgreementId = (): AgreementId => {
-    return `agreement_${uuidv4().replace(/-/g, '')}`;
-};
+import {generateAgreementId, isAgreementId} from "./AgreementId";
 
 describe("Agreement ID", () => {
     it("detects Agreement ID", () => {

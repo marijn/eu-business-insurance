@@ -1,7 +1,8 @@
 import {AgreementId, isAgreementId} from "./AgreementId";
+import {v4 as uuidv4} from "uuid";
 
 const generateAgreementId = (): AgreementId => {
-    throw new Error("TODO: Implement me!");
+    return `agreement_${uuidv4().replace(/-/g, '')}`;
 };
 
 describe("Agreement ID", () => {

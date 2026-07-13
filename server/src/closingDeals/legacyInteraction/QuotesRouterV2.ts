@@ -25,12 +25,12 @@ import {
 import {LocalDate} from "@js-joda/core";
 import {RequestQuoteForPolicy} from "../domain/RequestQuoteForPolicy";
 
-const QUOTE_VALIDITY_DAYS = 7;
-
 const configurePromiseToHandleRequestQuoteForPolicyUsingLegacySystem = (
     clock: Clock,
     storage: StorageType
 ) => {
+    const QUOTE_VALIDITY_DAYS = 7;
+
     return async (command: RequestQuoteForPolicy) => {
         const quote_id = command.quote_id;
         const businessId = command.business_id;

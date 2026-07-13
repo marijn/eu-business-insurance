@@ -34,6 +34,7 @@ const makeQuotesRouterV2 = (
     const handleAcceptQuoteForPolicy = configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem(clock, storage);
 
     router.post('/', asyncHandler(async (req, res) => {
+        const quote_id = generateId('quote');
         const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
         const {business_details, coverage_request, term, policy_type} = quoteRequest;
 
@@ -56,7 +57,7 @@ const makeQuotesRouterV2 = (
 
         const now = clock.now();
         const quote: Quote = {
-            id: generateId('quote'),
+            id: quote_id,
             status: 'PENDING',
             premium: buildPremium(assessment.final_premium, business_details.country),
             coverage: {...coverage, exclusions: assessment.exclusions},

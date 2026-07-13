@@ -36,7 +36,10 @@ const makeQuotesRouterV2 = (
     router.post('/', asyncHandler(async (req, res) => {
         const quote_id = generateId('quote');
         const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
-        const {business_details, coverage_request, term, policy_type} = quoteRequest;
+        const business_details = quoteRequest.business_details;
+        const coverage_request = quoteRequest.coverage_request;
+        const term = quoteRequest.term;
+        const policy_type = quoteRequest.policy_type;
 
         assertEuCountry(business_details.country, 'business_details.country');
         assertCoverageAllowed(coverage_request, 'coverage_request');

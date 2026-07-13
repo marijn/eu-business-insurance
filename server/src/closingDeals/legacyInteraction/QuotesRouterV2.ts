@@ -49,6 +49,7 @@ const makeQuotesRouterV2 = (
         const term = quoteRequest.term;
         const policy_type = quoteRequest.policy_type;
         const originatingIp = req?.ip;
+        const originatingUserAgent = req?.get('user-agent');
 
         assertEuCountry(business_details.country, 'business_details.country');
         assertCoverageAllowed(coverage_request, 'coverage_request');
@@ -90,7 +91,7 @@ const makeQuotesRouterV2 = (
 
         await auditV2(
             originatingIp,
-            req?.get('user-agent'),
+            originatingUserAgent,
             actorId(req),
             'QUOTE_CREATED',
             'QUOTE',

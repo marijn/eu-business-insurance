@@ -105,7 +105,7 @@ const makeQuotesRouterV2 = (
             }
         );
 
-        const finalQuote = quote;
+        const finalQuote = await storage.getQuote(quote_id);
 
         res.status(201).json(finalQuote);
     }));

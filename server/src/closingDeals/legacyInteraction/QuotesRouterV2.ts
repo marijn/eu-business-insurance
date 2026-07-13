@@ -44,6 +44,7 @@ const makeQuotesRouterV2 = (
         }
 
         const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
+        const businessId = quoteRequest.business_id;
         const business_details = quoteRequest.business_details;
         const coverage_request = quoteRequest.coverage_request;
         const term = quoteRequest.term;
@@ -82,7 +83,7 @@ const makeQuotesRouterV2 = (
             },
             expiry_date: addDays(now, QUOTE_VALIDITY_DAYS).toISOString(),
             created_at: now.toISOString(),
-            business_id: quoteRequest.business_id,
+            business_id: businessId,
             policy_type,
             term: {...term},
         };

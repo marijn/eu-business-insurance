@@ -141,7 +141,7 @@ const makeQuotesRouterV2 = (
             quote_id,
             clock.now(),
             {
-                business_id: quoteRequest.business_id,
+                business_id: businessId,
                 policy_type,
                 premium: quote.premium.gross,
             }

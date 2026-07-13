@@ -25,6 +25,8 @@ import {
 import {LocalDate} from "@js-joda/core";
 import {RequestQuoteForPolicy} from "../domain/RequestQuoteForPolicy";
 
+const QUOTE_VALIDITY_DAYS = 7;
+
 const configurePromiseToHandleRequestQuoteForPolicyUsingLegacySystem = (
     clock: Clock,
     storage: StorageType
@@ -42,8 +44,6 @@ const makeQuotesRouterV2 = (
     generateId: GenerateId
 ) => {
     const router = Router();
-
-    const QUOTE_VALIDITY_DAYS = 7;
 
     const handleRequestQuoteForPolicy = configurePromiseToHandleRequestQuoteForPolicyUsingLegacySystem(clock, storage);
     const handleAcceptQuoteForPolicy = configurePromiseToHandleAcceptQuoteForPolicyUsingLegacySystem(clock, storage);

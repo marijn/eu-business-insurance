@@ -35,6 +35,14 @@ const makeQuotesRouterV2 = (
 
     router.post('/', asyncHandler(async (req, res) => {
         const quote_id = generateId('quote');
+
+        if (!isQuoteId(quote_id)) {
+            // The types say this could theoretically happen, but in practice it cannot, because `generateId()` is under our
+            // control and honors the expected format.
+            // That is why I find throwing an Error an acceptable trade-off, even though that is a breaking change
+            throw new Error(`Generated quote ID ("${quote_id}") did not match expected format`);
+        }
+
         const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
         const business_details = quoteRequest.business_details;
         const coverage_request = quoteRequest.coverage_request;

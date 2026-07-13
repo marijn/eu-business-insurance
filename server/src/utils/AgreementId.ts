@@ -1,5 +1,5 @@
 /**
- * @example "agreement_"
+ * @example "agreement_45975aee299143d28b8b4d07646bc827"
  */
 type AgreementId = `agreement_${string}`;
 

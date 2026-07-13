@@ -44,6 +44,8 @@ const makeQuotesRouterV2 = (
         }
 
         const quoteRequest: QuoteRequest = validateSchema(quoteRequestSchema, req.body);
+        // TODO: Verify why tests show business_id to start with "biz_" but not generateId method exists.
+        //       Is the prefix a convention that sometimes is ignored by clients, or can it be enforced?
         const businessId = quoteRequest.business_id;
         const business_details = quoteRequest.business_details;
         const coverage_request = quoteRequest.coverage_request;

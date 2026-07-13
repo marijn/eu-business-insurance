@@ -4,7 +4,7 @@
 type AgreementId = `agreement_${string}`;
 
 const isAgreementId = (candidate: string): candidate is AgreementId => {
-    throw new Error("TODO: Implement me!");
+    return /^agreement_[0-9a-fA-F]{32}$/.test(candidate)
 };
 
 describe("Agreement ID", () => {

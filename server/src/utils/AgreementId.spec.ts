@@ -14,4 +14,11 @@ describe("Agreement ID", () => {
 
         expect(actual).toBe(true);
     })
+
+    it("detects incorrect Agreement ID", () => {
+        const incorrectExample = `agg_45975aee299143d28b8b4d07646bc827`;
+        const actual = isAgreementId(incorrectExample);
+
+        expect(actual).toBe(false);
+    })
 });

@@ -5,17 +5,18 @@ import { generateId } from '../utils/idGenerator';
 import {Clock, clock} from '../utils/clock';
 import { badRequest } from '../middleware/errorHandler';
 import {actorId, auditV2} from './audit';
+import {AgreementId, generateAgreementId} from "../utils/AgreementId";
 
 const UNSIGNED = ['DRAFT', 'PENDING_SIGNATURE'];
 
 export async function generateAgreementV2(
+    agreementId: AgreementId,
     originatingIp: string | undefined,
     originatingUserAgent: string | undefined,
     originatingActor: string,
     clock: Clock,
     options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
 ): Promise<Agreement> {
-  const agreementId = generateId('agreement');
   const policy = (await storage.getPolicy(options.policyId))!;
   const endorsement = options.endorsementId
     ? policy.endorsements?.find((e) => e.id === options.endorsementId)
@@ -93,11 +94,13 @@ export async function generateAgreement(
   req: Request | undefined,
   options: { policyId: string; templateId: string; endorsementId?: string; language?: string }
 ): Promise<Agreement> {
+  const agreementId = generateAgreementId();
   const originatingIp = req?.ip;
   const originatingUserAgent = req?.get('user-agent');
   const originatingActor = actorId(req);
 
   return await generateAgreementV2(
+      agreementId,
       originatingIp,
       originatingUserAgent,
       originatingActor,

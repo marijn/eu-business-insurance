@@ -6,6 +6,17 @@ export const SystemClock: Clock = {
   now: (): Date => new Date(),
 }
 
+export const ClockForTesting = (now: Date) => {
+  let currentTime = now;
+
+  return {
+    setTime: (now: Date) => {
+      currentTime = now;
+    },
+    now: () => currentTime,
+  }
+};
+
 /**
  * @deprecated
  * @see SystemClock

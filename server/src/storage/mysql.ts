@@ -409,8 +409,16 @@ function defineModels(sequelize: Sequelize) {
     gdpr_consent: BOOLEAN,
   }, { ...options, indexes: [{ fields: ['entity_type', 'entity_id'] }, { fields: ['action'] }, { fields: ['timestamp'] }] });
 
+  const OutboxEntry = sequelize.define('outbox_entries', {
+    id: { type: INTEGER, autoIncrement: true, primaryKey: true },
+    payload: { type: DataTypes.JSON, allowNull: false },
+    publishingStatus: {
+      type: DataTypes.ENUM('pending', 'published'), allowNull: false, defaultValue: 'pending', field: 'publishing_status',
+    },
+  }, options);
+
   return {
-    Business, RatingProfile, CyberRiskFactors, RatingProfileIncident, DnoRiskFactors, SuretyRiskFactors, WorkersCompRiskFactors,
+    OutboxEntry, Business, RatingProfile, CyberRiskFactors, RatingProfileIncident, DnoRiskFactors, SuretyRiskFactors, WorkersCompRiskFactors,
     Quote, QuoteTax, QuoteAddOn, QuoteExclusion, QuoteRequirement, QuoteUnderwritingExclusion,
     Policy, PolicyTax, PolicyAddOn, PolicyExclusion, Endorsement, EndorsementChange,
     Agreement, AgreementSignatory, Invoice, InvoiceItem, InvoiceDunning, PaymentMethod, Payment, Refund, RefundMollieRefund,
@@ -541,7 +549,7 @@ function createEntities(models: Models) {
     }),
   };
 
-  const quotes: Entity<Quote> = {
+  const quotes: Entity<Quote & { recordedEvents?: object[] }> = {
     model: models.Quote,
     include: [
       ordered('taxes'),
@@ -586,6 +594,10 @@ function createEntities(models: Models) {
       await replaceRows(models.QuoteUnderwritingExclusion, { quote_id: id }, (quote.underwriting.exclusions || []).map((code) => ({
         code,
       })), transaction);
+      await models.OutboxEntry.bulkCreate((quote.recordedEvents || []).map((payload) => ({
+        payload,
+        publishingStatus: 'pending',
+      })), { transaction });
     },
     fromRow: (row) => ({
       id: row.id,
@@ -1175,6 +1187,17 @@ function createEntities(models: Models) {
     }),
   };
 
+  const outboxEntries: Entity<{ id: number; payload: object; publishingStatus: 'pending' | 'published' }> = {
+    model: models.OutboxEntry,
+    include: [],
+    save: async (entry, id, transaction) => {
+      await models.OutboxEntry.upsert({
+        id: Number(id), payload: entry.payload, publishingStatus: entry.publishingStatus,
+      }, { transaction });
+    },
+    fromRow: (row) => ({ id: row.id, payload: row.payload, publishingStatus: row.publishingStatus }),
+  };
+
   const auditLogs: Entity<AuditLogEntry> = {
     model: models.AuditLog,
     include: [],
@@ -1222,6 +1245,7 @@ function createEntities(models: Models) {
     payouts,
     documents,
     audit_logs: auditLogs,
+    outbox_entries: outboxEntries,
   };
 }
 
@@ -1271,7 +1295,7 @@ export class MySqlBackend implements StorageBackend {
     const { model, include, fromRow } = this.entities[collection];
     const rows = await model.findAll({
       include,
-      order: 'seq' in model.getAttributes() ? [['seq', 'ASC']] : [],
+      order: [['seq' in model.getAttributes() ? 'seq' : model.primaryKeyAttribute, 'ASC']],
     });
     return rows.map((row) => fromRow(plain(row.get({ plain: true })) as Row) as T);
   }

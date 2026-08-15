@@ -13,6 +13,7 @@ export const COLLECTIONS = [
   'rating_profiles',
   'mollie_customers',
   'audit_logs',
+  'outbox_entries',
 ] as const;
 
 export type Collection = typeof COLLECTIONS[number];

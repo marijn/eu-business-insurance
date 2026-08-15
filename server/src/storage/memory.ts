@@ -3,6 +3,7 @@ import { Collection, StorageBackend } from './backend';
 export class MemoryBackend implements StorageBackend {
   private tables = new Map<Collection, Map<string, unknown>>();
   private contents = new Map<string, Buffer>();
+  private outboxEntryId = 0;
 
   private table(collection: Collection): Map<string, unknown> {
     let table = this.tables.get(collection);
@@ -16,7 +17,19 @@ export class MemoryBackend implements StorageBackend {
   async init(): Promise<void> {}
 
   async put(collection: Collection, id: string, value: unknown): Promise<void> {
-    this.table(collection).set(id, structuredClone(value));
+    if (collection !== 'quotes' || typeof value !== 'object' || value === null || !('recordedEvents' in value)) {
+      this.table(collection).set(id, structuredClone(value));
+      return;
+    }
+    const { recordedEvents, ...quote } = value;
+    if (!Array.isArray(recordedEvents)) throw new TypeError('recordedEvents must be a list of events');
+    const payloads = recordedEvents.map((event) => JSON.parse(JSON.stringify(event)));
+    this.table('quotes').set(id, structuredClone(quote));
+    payloads.forEach((payload, index) => {
+      const entryId = this.outboxEntryId + index + 1;
+      this.table('outbox_entries').set(String(entryId), { id: entryId, payload, publishingStatus: 'pending' });
+    });
+    this.outboxEntryId += payloads.length;
   }
 
   async get<T>(collection: Collection, id: string): Promise<T | undefined> {
